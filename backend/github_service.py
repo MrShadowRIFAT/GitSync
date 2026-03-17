@@ -127,7 +127,7 @@ class GitHubService:
             
             # Switch to main branch if master or others to ensure modern standards
             if "main" not in [h.name for h in repo.heads]:
-                repo.git.checkout("-H", "main")
+                repo.git.checkout("-b", "main")
             
             repo.remotes.origin.push(refspec="refs/heads/main:refs/heads/main", set_upstream=True)
             log_action("INFO", f"Initialized and pushed {local_path} to {repo_url}", "GitHubService")

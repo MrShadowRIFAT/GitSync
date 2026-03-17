@@ -124,6 +124,10 @@ class SyncManager:
         log_action("INFO", f"Started watching workspace: {path}", "Watcher")
 
     def sync_local_repo(self, local_path):
+        if not os.path.exists(local_path):
+            log_action("WARNING", f"Path no longer exists, skipping sync: {local_path}", "Watcher")
+            return
+            
         repo_name = os.path.basename(local_path)
         mapping = get_repo_mapping_by_path(local_path)
         
