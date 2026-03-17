@@ -1,4 +1,5 @@
 import os
+import subprocess
 import webbrowser
 import threading
 from fastapi import FastAPI, HTTPException, Request
@@ -71,6 +72,27 @@ def shutdown_event():
 @app.get("/api/workspaces")
 def api_get_workspaces():
     return get_workspaces()
+
+@app.get("/api/browse-folder")
+def api_browse_folder():
+    try:
+        ps_cmd = (
+            "Add-Type -AssemblyName System.windows.forms; "
+            "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
+            "$f.Description = 'Select Workspace Folder'; "
+            "$f.ShowNewFolderButton = $true; "
+            "if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"
+        )
+        CREATE_NO_WINDOW = 0x08000000
+        # -Sta is required for Windows Forms dialogs
+        result = subprocess.run(
+            ["powershell", "-Sta", "-NoProfile", "-Command", ps_cmd],
+            capture_output=True, text=True, creationflags=CREATE_NO_WINDOW
+        )
+        return {"path": result.stdout.strip()}
+    except Exception as e:
+        log_action("ERROR", f"Failed to open native picker: {e}", "API")
+        raise HTTPException(status_code=500, detail="Could not open browser dialog")
 
 @app.post("/api/add-workspace")
 def api_add_workspace(ws: WorkspaceModel):

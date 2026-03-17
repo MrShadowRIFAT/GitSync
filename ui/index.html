@@ -226,7 +226,6 @@
       <div class="card fade-up">
        <div class="card-header" style="justify-content: flex-start; gap: 12px;">
         <h2 style="font-size:14px; font-weight:600; flex:1;">Workspace Status</h2>
-        <input type="text" id="newWsPath" class="input-field" placeholder="D:\Projects" style="width:300px; padding: 6px 10px;">
         <select id="newWsVis" class="input-field" style="width:120px; padding: 6px 10px;">
             <option value="Private">Private</option>
             <option value="Public">Public</option>
@@ -478,14 +477,18 @@
     }
 
     async function addWorkspace() {
-        const path = document.getElementById('newWsPath').value.trim();
         const vis = document.getElementById('newWsVis').value;
-        if (!path) {
-            showToast('Please enter a directory path', 'warning');
-            return;
-        }
 
         try {
+            showToast('Opening folder browser...', 'info');
+            const browseRes = await fetch('/api/browse-folder').then(r => r.json());
+            const path = browseRes.path;
+            
+            if (!path) {
+                // User cancelled the dialog silently
+                return;
+            }
+
             const res = await fetch('/api/add-workspace', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -493,7 +496,6 @@
             });
             
             if (res.ok) {
-                document.getElementById('newWsPath').value = '';
                 showToast('Added workspace: ' + path, 'success');
                 loadData();
             } else {
