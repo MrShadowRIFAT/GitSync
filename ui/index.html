@@ -459,6 +459,7 @@
       }
       tbody.innerHTML = workspaces.map(w => {
         let isAct = (w.is_paused === 0);
+        let safePath = encodeURIComponent(w.path);
         return `
         <tr>
           <td style="font-weight:500; font-family:'JetBrains Mono',monospace; font-size:12px;"><i data-lucide="folder" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:6px;color:var(--primary);"></i>${w.path}</td>
@@ -466,10 +467,10 @@
           <td><span class="badge ${isAct ? 'badge-success' : 'badge-warning'}">${isAct ? 'Watching' : 'Paused'}</span></td>
           <td style="display:flex; gap:6px; flex-wrap:wrap;">
             ${isAct
-              ? `<button class="btn btn-ghost btn-sm" onclick="toggleWorkspace('${w.path.replace(/\\/g, '\\\\')}', true)"><i data-lucide="pause" style="width:12px;height:12px;"></i> Pause</button>`
-              : `<button class="btn btn-accent btn-sm" onclick="toggleWorkspace('${w.path.replace(/\\/g, '\\\\')}', false)"><i data-lucide="play" style="width:12px;height:12px;"></i> Resume</button>`
+              ? `<button class="btn btn-ghost btn-sm" onclick="toggleWorkspace(decodeURIComponent('${safePath}'), true)"><i data-lucide="pause" style="width:12px;height:12px;"></i> Pause</button>`
+              : `<button class="btn btn-accent btn-sm" onclick="toggleWorkspace(decodeURIComponent('${safePath}'), false)"><i data-lucide="play" style="width:12px;height:12px;"></i> Resume</button>`
             }
-            <button class="btn btn-danger btn-sm" onclick="removeWorkspace('${w.path.replace(/\\/g, '\\\\')}')"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="removeWorkspace(decodeURIComponent('${safePath}'))"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>
           </td>
         </tr>
       `}).join('');
@@ -477,23 +478,31 @@
     }
 
     async function addWorkspace() {
-        const path = document.getElementById('newWsPath').value;
+        const path = document.getElementById('newWsPath').value.trim();
         const vis = document.getElementById('newWsVis').value;
-        if (!path) return;
+        if (!path) {
+            showToast('Please enter a directory path', 'warning');
+            return;
+        }
 
-        const res = await fetch('/api/add-workspace', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path, visibility: vis })
-        });
-        
-        if (res.ok) {
-            document.getElementById('newWsPath').value = '';
-            showToast('Added workspace: ' + path, 'success');
-            loadData();
-        } else {
-            const error = await res.json();
-            showToast('Failed to add workspace: ' + error.detail, 'danger');
+        try {
+            const res = await fetch('/api/add-workspace', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path, visibility: vis })
+            });
+            
+            if (res.ok) {
+                document.getElementById('newWsPath').value = '';
+                showToast('Added workspace: ' + path, 'success');
+                loadData();
+            } else {
+                let errText = await res.text();
+                try { let json = JSON.parse(errText); errText = json.detail || json.message || errText; } catch(e){}
+                showToast('Failed: ' + errText, 'danger');
+            }
+        } catch(e) {
+            showToast('Failed to connect to backend', 'danger');
         }
     }
 
@@ -529,15 +538,18 @@
           return;
       }
       
-      tbody.innerHTML = repositories.map(r => `
+      tbody.innerHTML = repositories.map(r => {
+        let safePath = encodeURIComponent(r.local_path);
+        return `
         <tr>
           <td style="font-weight:500;"><i data-lucide="git-branch" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:6px;color:var(--primary);"></i><a href="https://github.com/${r.github_repo}" target="_blank" style="color:var(--text); text-decoration:underline;">${r.repo_name}</a></td>
           <td style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted);">${r.local_path}</td>
           <td style="color:var(--text-muted);">${new Date(r.created_at).toLocaleString()}</td>
           <td style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm" onclick="forceSync('${r.local_path.replace(/\\/g, '\\\\')}')"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Sync</button>
+            <button class="btn btn-primary btn-sm" onclick="forceSync(decodeURIComponent('${safePath}'))"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Sync</button>
           </td>
-        </tr>`).join('');
+        </tr>`
+      }).join('');
         
       recentTbody.innerHTML = repositories.slice(-4).reverse().map(r => `
           <tr>
@@ -666,9 +678,13 @@
       const input = document.getElementById(id);
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
-      const icon = btn.querySelector('i');
-      if (icon) icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
-      lucide.createIcons();
+      
+      // lucide turns <i> into <svg> during initialization
+      const icon = btn.querySelector('svg') || btn.querySelector('i');
+      if (icon) {
+          icon.outerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" style="width:16px; height:16px;"></i>`;
+          lucide.createIcons();
+      }
     }
 
     function openModal(title, message, callback) {
