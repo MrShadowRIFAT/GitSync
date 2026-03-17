@@ -2,9 +2,9 @@ import sqlite3
 import os
 
 DB_DIR = r"C:\Program Files\GitSync\data"
-# Fallback to local directory for development without admin privileges
-if not os.path.exists(DB_DIR):
-    DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+if not os.path.exists(DB_DIR) and not os.access(r"C:\Program Files", os.W_OK):
+    appdata = os.environ.get('LOCALAPPDATA', os.environ.get('APPDATA'))
+    DB_DIR = os.path.join(appdata, "GitSync", "data")
 
 DB_PATH = os.path.join(DB_DIR, "gitsync.db")
 
