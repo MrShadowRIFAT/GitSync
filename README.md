@@ -64,5 +64,11 @@ To bundle the application yourself, you can use the provided build script:
 
 This leverages PyInstaller to package the FastApi backend, HTML dashboard, and Python dependencies into a single, portable executable found inside the `dist/` directory.
 
+## 🤝 Support & Feedback
+
+If you enjoy using GitSync, please consider giving this repository a ⭐ **Star**! It helps others discover the project.
+
+Encountered a bug or have a feature request? Please [open an issue](https://github.com/MrShadowRIFAT/GitSync/issues) on GitHub.
+
 ## 📄 License
 MIT License
