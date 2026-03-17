@@ -5,7 +5,7 @@ pip install -r requirements.txt
 echo.
 echo Building GitSync...
 rem Use --add-data "ui;ui" to bundle the frontend dashboard correctly inside the executable
-pyinstaller --onefile --noconsole --name GitSync --add-data "ui;ui" main.py
+pyinstaller --onefile --noconsole --name GitSync --icon "ui\assets\logo.ico" --add-data "ui;ui" main.py
 
 echo.
 echo Build complete! Your file is located at:
