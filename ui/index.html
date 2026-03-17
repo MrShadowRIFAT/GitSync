@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitSync Dashboard</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --bg: #0d1117;
+      --panel: #161b22;
+      --text: #c9d1d9;
+      --accent: #3fb950;
+      --warning: #d29922;
+      --danger: #da3633;
+      --border: #30363d;
+      --text-muted: #8b949e;
+      --panel-hover: #0d419d;
+      --glow: rgba(58, 134, 255, 0.3);
+      --surface-light: #1c2128;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(135deg, var(--bg) 0%, #0f1419 100%); color: var(--text); overflow: hidden; }
+
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(58, 134, 255, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(58, 134, 255, 0.4); }
+
+    .sidebar { width: 260px; min-width: 260px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.95) 0%, rgba(13, 17, 23, 0.98) 100%); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; transition: transform 0.3s ease; backdrop-filter: blur(10px); }
+    .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 8px; margin: 2px 12px; cursor: pointer; transition: all 0.25s ease; color: var(--text-muted); font-size: 14px; font-weight: 500; }
+    .sidebar-item:hover { background: rgba(58, 134, 255, 0.1); color: var(--text); }
+    .sidebar-item.active { background: linear-gradient(90deg, rgba(58, 134, 255, 0.3) 0%, rgba(58, 134, 255, 0.1) 100%); color: var(--primary); border-left: 3px solid var(--primary); padding-left: 13px; }
+    .sidebar-item.active i { color: var(--primary); }
+
+    .topbar { height: 56px; min-height: 56px; background: linear-gradient(180deg, rgba(22, 27, 34, 0.8) 0%, rgba(13, 17, 23, 0.9) 100%); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; backdrop-filter: blur(12px); }
+
+    .card { background: linear-gradient(135deg, rgba(22, 27, 34, 0.6) 0%, rgba(22, 27, 34, 0.4) 100%); border: 1px solid rgba(48, 54, 61, 0.5); border-radius: 12px; overflow: hidden; transition: all 0.3s ease; backdrop-filter: blur(8px); }
+    .card:hover { border-color: rgba(58, 134, 255, 0.5); box-shadow: 0 0 20px rgba(58, 134, 255, 0.1); }
+    .card-header { padding: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: flex; align-items: center; justify-content: space-between; }
+    .card-body { padding: 20px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: rgba(63, 185, 80, 0.15); color: var(--accent); border: 1px solid rgba(63, 185, 80, 0.3); }
+    .badge-warning { background: rgba(210, 153, 34, 0.15); color: var(--warning); border: 1px solid rgba(210, 153, 34, 0.3); }
+    .badge-danger { background: rgba(218, 54, 51, 0.15); color: var(--danger); border: 1px solid rgba(218, 54, 51, 0.3); }
+    .badge-info { background: rgba(58, 134, 255, 0.15); color: var(--primary); border: 1px solid rgba(58, 134, 255, 0.3); }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.25s ease; font-family: 'Outfit', sans-serif; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%); color: white; }
+    .btn-primary:hover { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3); }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: rgba(58, 134, 255, 0.08); color: var(--text); border-color: rgba(58, 134, 255, 0.3); }
+    .btn-danger { background: rgba(218, 54, 51, 0.12); color: var(--danger); border: 1px solid rgba(218, 54, 51, 0.3); }
+    .btn-danger:hover { background: rgba(218, 54, 51, 0.22); }
+    .btn-accent { background: rgba(63, 185, 80, 0.12); color: var(--accent); border: 1px solid rgba(63, 185, 80, 0.3); }
+    .btn-accent:hover { background: rgba(63, 185, 80, 0.22); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
+    .data-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid rgba(48, 54, 61, 0.3); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(58, 134, 255, 0.05); }
+
+    .log-viewer { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.9; padding: 16px; max-height: 260px; overflow-y: auto; background: rgba(13, 17, 23, 0.8); border-radius: 8px; border: 1px solid rgba(48, 54, 61, 0.5); }
+    .log-info { color: #79c0ff; }
+    .log-warning { color: var(--warning); }
+    .log-error { color: var(--danger); }
+    .log-success { color: var(--accent); }
+    .log-time { color: var(--text-muted); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sync-spin { animation: spin 2s linear infinite; }
+
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse-dot 2s ease-in-out infinite; display: inline-block; }
+
+    .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; transform: translateX(120%); transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); background: linear-gradient(135deg, rgba(22, 27, 34, 0.95), rgba(22, 27, 34, 0.85)); border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
+    .toast.show { transform: translateX(0); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 900; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal { background: linear-gradient(135deg, rgba(22, 27, 34, 0.95), rgba(22, 27, 34, 0.8)); border: 1px solid var(--border); border-radius: 12px; padding: 28px; max-width: 440px; width: 90%; transform: scale(0.95); transition: transform 0.25s ease; backdrop-filter: blur(12px); }
+    .modal-overlay.active .modal { transform: scale(1); }
+
+    .input-field { width: 100%; padding: 10px 14px; background: rgba(13, 17, 23, 0.8); border: 1px solid rgba(48, 54, 61, 0.8); border-radius: 6px; color: var(--text); font-size: 14px; font-family: 'Outfit', sans-serif; transition: all 0.25s ease; }
+    .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.15); }
+
+    .page { display: none; opacity: 0; transition: opacity 0.25s ease; }
+    .page.active { display: block; opacity: 1; }
+
+    @media (max-width: 900px) {
+      .sidebar { position: fixed; left: 0; top: 0; z-index: 800; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 799; display: none; }
+      .mobile-overlay.active { display: block; }
+    }
+
+    .stat-card { background: linear-gradient(135deg, rgba(22, 27, 34, 0.8), rgba(22, 27, 34, 0.6)); border: 1px solid rgba(48, 54, 61, 0.5); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
+    .stat-card:hover { border-color: rgba(58, 134, 255, 0.3); box-shadow: 0 0 12px rgba(58, 134, 255, 0.1); }
+    .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+    .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.4s ease forwards; }
+    .fade-up-1 { animation-delay: 0.05s; opacity: 0; }
+    .fade-up-2 { animation-delay: 0.1s; opacity: 0; }
+    .fade-up-3 { animation-delay: 0.15s; opacity: 0; }
+    .fade-up-4 { animation-delay: 0.2s; opacity: 0; }
+  </style>
+ </head>
+ <body class="h-full">
+  <div id="app-root" style="display:flex; height:100%; width:100%; overflow:hidden;">
+   <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+   
+   <aside class="sidebar" id="sidebar">
+    <div style="padding: 20px 16px 12px; display:flex; align-items:center; gap:10px; border-bottom: 1px solid rgba(48, 54, 61, 0.5);">
+     <div style="width:32px; height:32px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius:8px; display:flex; align-items:center; justify-content:center;">
+        <i data-lucide="git-branch" style="width:18px; height:18px; color:white;"></i>
+     </div>
+     <div>
+      <div id="sidebarTitle" style="font-size:16px; font-weight:700; letter-spacing:-0.02em;">GitSync</div>
+      <div id="sidebarTagline" style="font-size:10px; color:var(--text-muted); margin-top:2px;">Sync local folders with GitHub</div>
+     </div>
+    </div>
+    <div style="padding: 8px 0; flex:1; overflow-y:auto;">
+     <div class="sidebar-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+         <i data-lucide="layout-dashboard" style="width:18px; height:18px;"></i> <span>Dashboard</span>
+     </div>
+     <div class="sidebar-item" data-page="workspaces" onclick="navigateTo('workspaces')">
+         <i data-lucide="folder-open" style="width:18px; height:18px;"></i> <span>Workspaces</span>
+     </div>
+     <div class="sidebar-item" data-page="repositories" onclick="navigateTo('repositories')">
+         <i data-lucide="git-branch" style="width:18px; height:18px;"></i> <span>Repositories</span>
+     </div>
+     <div class="sidebar-item" data-page="deletions" onclick="navigateTo('deletions')">
+         <i data-lucide="trash-2" style="width:18px; height:18px;"></i> <span>Pending Deletions</span> 
+         <span class="badge badge-danger" id="badgePendingDeletions" style="margin-left:auto; font-size:10px; padding:2px 7px;">0</span>
+     </div>
+     <div class="sidebar-item" data-page="settings" onclick="navigateTo('settings')">
+         <i data-lucide="settings" style="width:18px; height:18px;"></i> <span>Settings</span>
+     </div>
+     <div class="sidebar-item" data-page="logs" onclick="navigateTo('logs')">
+         <i data-lucide="terminal" style="width:18px; height:18px;"></i> <span>Logs</span>
+     </div>
+    </div>
+    <div style="padding: 12px 16px; border-top: 1px solid var(--border);">
+     <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-muted);">
+         <span class="pulse-dot"></span> <span id="sidebarStatus">Connected</span>
+     </div>
+    </div>
+   </aside>
+   
+   <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+    <header class="topbar">
+     <div style="display:flex; align-items:center; gap:16px;">
+         <button class="btn-ghost btn" onclick="toggleSidebar()" style="display:none; padding:6px;" id="menuBtn"> <i data-lucide="menu" style="width:20px; height:20px;"></i> </button>
+         <h1 id="topbarTitle" style="font-size:16px; font-weight:600;">GitSync</h1>
+     </div>
+     <div style="display:flex; align-items:center; gap:16px;">
+      <div style="display:flex; align-items:center; gap:8px;" id="systemStatus">
+          <span class="badge badge-success"><span class="pulse-dot" style="width:6px; height:6px;"></span> <span id="statusBadgeText">Operational</span></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:13px;" id="syncIndicator">
+          <i data-lucide="refresh-cw" style="width:14px; height:14px;" class="sync-spin"></i> <span>Auto Syncing</span>
+      </div>
+      <div style="width:1px; height:24px; background:var(--border);"></div>
+      <button class="btn btn-ghost btn-sm" onclick="showToast('Profile: ' + githubUser, 'info')" aria-label="User menu">
+       <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--primary), #a78bfa); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+            <img id="ghAvatar" src="" style="width:100%;height:100%;object-fit:cover;display:none;"/>
+            <i data-lucide="user" id="ghPlaceholder" style="width:14px; height:14px; color:white;"></i>
+       </div>
+      </button>
+     </div>
+    </header>
+    
+    <main style="flex:1; overflow-y:auto; overflow-x:hidden; padding:24px;" id="mainContent">
+     <!-- Dashboard Page -->
+     <section class="page active" id="page-dashboard">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:24px;">
+       <div class="stat-card fade-up fade-up-1"><span class="stat-label">Workspaces</span> <span class="stat-value" id="statWs" style="color:var(--primary);">0</span></div>
+       <div class="stat-card fade-up fade-up-2"><span class="stat-label">Repositories</span> <span class="stat-value" id="statRepos" style="color:var(--accent);">0</span></div>
+       <div class="stat-card fade-up fade-up-3"><span class="stat-label">Pending Deletions</span> <span class="stat-value" id="statDels" style="color:var(--warning);">0</span></div>
+       <div class="stat-card fade-up fade-up-4"><span class="stat-label">Logs</span> <span class="stat-value" id="statLogs" style="font-size:20px;">0</span></div>
+      </div>
+      
+      <div class="card fade-up fade-up-2" style="margin-bottom:24px;">
+       <div class="card-header">
+        <h2 style="font-size:14px; font-weight:600;">Recent Repositories</h2>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('repositories')">View All <i data-lucide="arrow-right" style="width:14px; height:14px;"></i></button>
+       </div>
+       <div style="overflow-x:auto;">
+        <table class="data-table" id="recentRepoTable">
+         <thead>
+          <tr>
+           <th>Repository</th>
+           <th>Location</th>
+          </tr>
+         </thead>
+         <tbody></tbody>
+        </table>
+       </div>
+      </div>
+      
+      <div class="card fade-up fade-up-3">
+       <div class="card-header">
+        <h2 style="font-size:14px; font-weight:600;">Activity Log</h2>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('logs')">Full Log <i data-lucide="arrow-right" style="width:14px; height:14px;"></i></button>
+       </div>
+       <div class="card-body" style="padding:0;">
+        <div class="log-viewer" id="dashLogViewer"></div>
+       </div>
+      </div>
+     </section>
+     
+     <!-- Workspaces Page -->
+     <section class="page" id="page-workspaces">
+      <div class="card fade-up">
+       <div class="card-header" style="justify-content: flex-start; gap: 12px;">
+        <h2 style="font-size:14px; font-weight:600; flex:1;">Workspace Status</h2>
+        <input type="text" id="newWsPath" class="input-field" placeholder="D:\Projects" style="width:300px; padding: 6px 10px;">
+        <select id="newWsVis" class="input-field" style="width:120px; padding: 6px 10px;">
+            <option value="Private">Private</option>
+            <option value="Public">Public</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="addWorkspace()"><i data-lucide="plus" style="width:14px; height:14px;"></i> Add Workspace</button>
+       </div>
+       <div style="overflow-x:auto;">
+        <table class="data-table" id="workspaceTable">
+         <thead>
+          <tr>
+           <th>Workspace Path</th>
+           <th>Visibility</th>
+           <th>Status</th>
+           <th>Actions</th>
+          </tr>
+         </thead>
+         <tbody></tbody>
+        </table>
+       </div>
+      </div>
+     </section>
+     
+     <!-- Repositories Page -->
+     <section class="page" id="page-repositories">
+      <div class="card fade-up">
+       <div class="card-header">
+        <h2 style="font-size:14px; font-weight:600;">All Repositories</h2>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-accent btn-sm" onclick="forceSyncAll()"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Sync All (Startup Scan)</button>
+        </div>
+       </div>
+       <div style="overflow-x:auto;">
+        <table class="data-table" id="repoTable">
+         <thead>
+          <tr>
+           <th>Repository</th>
+           <th>Local Path</th>
+           <th>Created</th>
+           <th>Actions</th>
+          </tr>
+         </thead>
+         <tbody></tbody>
+        </table>
+       </div>
+      </div>
+     </section>
+     
+     <!-- Pending Deletions Page -->
+     <section class="page" id="page-deletions">
+      <div class="card fade-up">
+       <div class="card-header">
+        <h2 style="font-size:14px; font-weight:600;">Pending Deletions</h2>
+       </div>
+       <div style="overflow-x:auto;">
+        <table class="data-table" id="deletionsTable">
+         <thead>
+          <tr>
+           <th>Repository</th>
+           <th>Detected</th>
+           <th>Reason</th>
+           <th>Actions</th>
+          </tr>
+         </thead>
+         <tbody></tbody>
+        </table>
+       </div>
+      </div>
+     </section>
+     
+     <!-- Settings Page -->
+     <section class="page" id="page-settings">
+      <form id="settingsForm" onsubmit="handleSettingsSave(event)" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:1200px;">
+       <div class="card fade-up fade-up-1">
+        <div class="card-header" style="border-bottom:1px solid rgba(48,54,61,0.5);">
+         <h3 style="font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;"><i data-lucide="github" style="width:16px;height:16px;color:var(--primary);"></i> GitHub Credentials</h3>
+        </div>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+         <div>
+             <label for="ghToken" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">API Token (Required)</label>
+             <div style="position:relative;">
+                 <input type="password" id="ghToken" class="input-field" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="padding-right:40px;" required>
+                 <button type="button" onclick="togglePasswordVisibility('ghToken', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
+             </div>
+         </div>
+        </div>
+       </div>
+       
+       <div class="card fade-up fade-up-2">
+        <div class="card-header" style="border-bottom:1px solid rgba(48,54,61,0.5);">
+         <h3 style="font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;"><i data-lucide="zap" style="width:16px;height:16px;color:var(--warning);"></i> AI Providers (Optional)</h3>
+        </div>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+         <div>
+             <label for="openaiKey" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">OpenAI API Key (Generates missing Readme & Commits)</label>
+             <div style="position:relative;">
+                 <input type="password" id="openaiKey" class="input-field" placeholder="sk-xxxxxxxxxxxxxxxxxxxx" style="padding-right:40px;">
+                 <button type="button" onclick="togglePasswordVisibility('openaiKey', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
+             </div>
+         </div>
+         <div>
+             <label for="geminiKey" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Gemini API Key (Fallback AI)</label>
+             <div style="position:relative;">
+                 <input type="password" id="geminiKey" class="input-field" placeholder="AIzaxxxxxxxxxxxxxxxxxx" style="padding-right:40px;">
+                 <button type="button" onclick="togglePasswordVisibility('geminiKey', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
+             </div>
+         </div>
+        </div>
+       </div>
+       
+       <div class="card fade-up fade-up-2" style="grid-column:1/3;">
+        <div class="card-body" style="display:flex; gap:12px; justify-content:flex-end;">
+         <button type="submit" class="btn btn-primary"><i data-lucide="save" style="width:14px;height:14px;"></i> Save All Settings</button>
+        </div>
+       </div>
+      </form>
+     </section>
+     
+     <!-- Logs Page -->
+     <section class="page" id="page-logs">
+      <div class="card fade-up">
+       <div class="card-header">
+        <h2 style="font-size:14px; font-weight:600;">Full Activity Logs</h2>
+       </div>
+       <div class="card-body" style="padding:0;">
+        <div class="log-viewer" id="fullLogViewer" style="max-height:500px;"></div>
+       </div>
+      </div>
+     </section>
+    </main>
+   </div>
+  </div>
+  
+  <div class="toast-container" id="toastContainer" role="alert" aria-live="polite"></div>
+  
+  <div class="modal-overlay" id="modalOverlay">
+   <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modalTitle" style="font-size:16px; font-weight:600; margin-bottom:8px;"></h3>
+    <p id="modalMessage" style="font-size:14px; color:var(--text-muted); margin-bottom:24px;"></p>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+     <button class="btn btn-ghost" onclick="closeModal()">Cancel</button> 
+     <button class="btn btn-danger" id="modalConfirmBtn" onclick="confirmModalAction()">Confirm</button>
+    </div>
+   </div>
+  </div>
+  
+  <script>
+    let workspaces = [];
+    let repositories = [];
+    let pendingDeletions = [];
+    let logEntries = [];
+    let githubUser = "Not Logged In";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        lucide.createIcons();
+        loadProfile();
+        loadData();
+        setInterval(loadData, 5000);
+        window.addEventListener('resize', handleResize);
+        handleResize();
+    });
+
+    async function loadData() {
+        workspaces = await fetch('/api/workspaces').then(r => r.json());
+        repositories = await fetch('/api/repositories').then(r => r.json());
+        pendingDeletions = await fetch('/api/pending-deletions').then(r => r.json());
+        logEntries = await fetch('/api/logs').then(r => r.json());
+        
+        document.getElementById('statWs').textContent = workspaces.length;
+        document.getElementById('statRepos').textContent = repositories.length;
+        document.getElementById('statDels').textContent = pendingDeletions.length;
+        document.getElementById('badgePendingDeletions').textContent = pendingDeletions.length;
+        document.getElementById('statLogs').textContent = logEntries.length;
+        
+        renderWorkspaces();
+        renderRepositories();
+        renderDeletions();
+        renderLogs('dashLogViewer', true);
+        
+        if (document.getElementById('page-logs').classList.contains('active')) {
+            renderLogs('fullLogViewer', false);
+        }
+    }
+
+    async function loadProfile() {
+        const settings = await fetch('/api/settings').then(r => r.json());
+        if (settings.github_token) document.getElementById('ghToken').value = settings.github_token;
+        if (settings.openai_key) document.getElementById('openaiKey').value = settings.openai_key;
+        if (settings.gemini_key) document.getElementById('geminiKey').value = settings.gemini_key;
+
+        if (settings.github_profile) {
+            githubUser = settings.github_profile.login || 'User';
+            if (settings.github_profile.avatar_url) {
+                document.getElementById('ghAvatar').src = settings.github_profile.avatar_url;
+                document.getElementById('ghAvatar').style.display = 'block';
+                document.getElementById('ghPlaceholder').style.display = 'none';
+            }
+        }
+    }
+
+    async function handleSettingsSave(e) {
+        e.preventDefault();
+        const payload = {
+            github_token: document.getElementById('ghToken').value,
+            openai_key: document.getElementById('openaiKey').value,
+            gemini_key: document.getElementById('geminiKey').value
+        };
+
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        showToast('Settings saved successfully', 'success');
+        if (res.profile) {
+            githubUser = res.profile.login;
+            if (res.profile.avatar_url) {
+                document.getElementById('ghAvatar').src = res.profile.avatar_url;
+                document.getElementById('ghAvatar').style.display = 'block';
+                document.getElementById('ghPlaceholder').style.display = 'none';
+            }
+        }
+    }
+
+    function renderWorkspaces() {
+      const tbody = document.querySelector('#workspaceTable tbody');
+      if (workspaces.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--text-muted)">No workspaces added yet. Add a local folder to monitor above!</td></tr>';
+          return;
+      }
+      tbody.innerHTML = workspaces.map(w => {
+        let isAct = (w.is_paused === 0);
+        return `
+        <tr>
+          <td style="font-weight:500; font-family:'JetBrains Mono',monospace; font-size:12px;"><i data-lucide="folder" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:6px;color:var(--primary);"></i>${w.path}</td>
+          <td>${w.visibility}</td>
+          <td><span class="badge ${isAct ? 'badge-success' : 'badge-warning'}">${isAct ? 'Watching' : 'Paused'}</span></td>
+          <td style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${isAct
+              ? `<button class="btn btn-ghost btn-sm" onclick="toggleWorkspace('${w.path.replace(/\\/g, '\\\\')}', true)"><i data-lucide="pause" style="width:12px;height:12px;"></i> Pause</button>`
+              : `<button class="btn btn-accent btn-sm" onclick="toggleWorkspace('${w.path.replace(/\\/g, '\\\\')}', false)"><i data-lucide="play" style="width:12px;height:12px;"></i> Resume</button>`
+            }
+            <button class="btn btn-danger btn-sm" onclick="removeWorkspace('${w.path.replace(/\\/g, '\\\\')}')"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>
+          </td>
+        </tr>
+      `}).join('');
+      lucide.createIcons();
+    }
+
+    async function addWorkspace() {
+        const path = document.getElementById('newWsPath').value;
+        const vis = document.getElementById('newWsVis').value;
+        if (!path) return;
+
+        const res = await fetch('/api/add-workspace', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path, visibility: vis })
+        });
+        
+        if (res.ok) {
+            document.getElementById('newWsPath').value = '';
+            showToast('Added workspace: ' + path, 'success');
+            loadData();
+        } else {
+            const error = await res.json();
+            showToast('Failed to add workspace: ' + error.detail, 'danger');
+        }
+    }
+
+    async function toggleWorkspace(path, pause) {
+        const endpoint = pause ? '/api/pause-workspace' : '/api/resume-workspace';
+        await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path })
+        });
+        showToast((pause ? 'Paused' : 'Resumed') + ' ' + path, 'info');
+        loadData();
+    }
+
+    async function removeWorkspace(path) {
+        if (!confirm('Are you sure you want to stop monitoring ' + path + '?')) return;
+        await fetch('/api/remove-workspace', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path })
+        });
+        showToast('Removed ' + path, 'warning');
+        loadData();
+    }
+
+    function renderRepositories() {
+      const tbody = document.querySelector('#repoTable tbody');
+      const recentTbody = document.querySelector('#recentRepoTable tbody');
+      
+      if (repositories.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--text-muted)">No repositories synced yet. Wait for Watchdog to scan your active workspaces.</td></tr>';
+          recentTbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 20px; color:var(--text-muted)">Awaiting syncs...</td></tr>';
+          return;
+      }
+      
+      tbody.innerHTML = repositories.map(r => `
+        <tr>
+          <td style="font-weight:500;"><i data-lucide="git-branch" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:6px;color:var(--primary);"></i><a href="https://github.com/${r.github_repo}" target="_blank" style="color:var(--text); text-decoration:underline;">${r.repo_name}</a></td>
+          <td style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted);">${r.local_path}</td>
+          <td style="color:var(--text-muted);">${new Date(r.created_at).toLocaleString()}</td>
+          <td style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="forceSync('${r.local_path.replace(/\\/g, '\\\\')}')"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Sync</button>
+          </td>
+        </tr>`).join('');
+        
+      recentTbody.innerHTML = repositories.slice(-4).reverse().map(r => `
+          <tr>
+            <td style="font-weight:500;"><i data-lucide="git-branch" style="width:14px; height:14px; display:inline; vertical-align:middle; margin-right:6px; color:var(--primary);"></i><a href="https://github.com/${r.github_repo}" target="_blank" style="color:var(--text); text-decoration:underline;">${r.repo_name}</a></td>
+            <td style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted);">${r.local_path}</td>
+          </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    async function forceSync(path) {
+        showToast('Initiating manual sync for ' + path, 'info');
+        await fetch('/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ local_path: path })
+        });
+        loadData();
+    }
+    
+    async function forceSyncAll() {
+        showToast('Initiating full scanning operations...', 'info');
+        await fetch('/api/sync/all', { method: 'POST' });
+    }
+
+    function renderDeletions() {
+      const tbody = document.querySelector('#deletionsTable tbody');
+      if (pendingDeletions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--text-muted)">Safety System: Clear! No locally deleted repositories.</td></tr>';
+          return;
+      }
+      tbody.innerHTML = pendingDeletions.map((d) => `
+        <tr>
+          <td style="font-weight:500;"><i data-lucide="git-branch" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:6px;color:var(--danger);"></i>${d.repo_name}</td>
+          <td style="color:var(--text-muted);">${new Date(d.detected_time).toLocaleString()}</td>
+          <td style="color:var(--text-muted);">${d.reason}</td>
+          <td style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.repo_name}')"><i data-lucide="trash-2" style="width:12px;height:12px;"></i> Delete GitHub Repo</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelDeletion('${d.repo_name}')"><i data-lucide="x" style="width:12px;height:12px;"></i> Ignore / Cancel</button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function confirmDelete(name) {
+      openModal('Safe Delete System', `Are you 100% sure you want to permanently delete "${name}" from your GitHub Account? This action absolutely CANNOT be undone.`, async () => {
+        showToast(`Deleting ${name} on GitHub...`, 'danger');
+        await fetch('/api/delete-repo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo_name: name })
+        });
+        loadData();
+      });
+    }
+
+    async function cancelDeletion(name) {
+        await fetch('/api/cancel-deletion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo_name: name })
+        });
+        showToast('Ignored deletion of ' + name, 'info');
+        loadData();
+    }
+
+    function renderLogs(target, dashOnly) {
+      const el = document.getElementById(target);
+      // Determine if they're scrolled to the bottom (sticking to bottom)
+      const isScrolledToBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 1;
+      
+      const sliceSize = dashOnly ? 15 : logEntries.length;
+      el.innerHTML = logEntries.slice(0, sliceSize).map(l => {
+        const time = new Date(l.timestamp).toLocaleTimeString();
+        let cls = 'log-info';
+        if (l.level === 'WARNING') cls = 'log-warning';
+        if (l.level === 'ERROR') cls = 'log-error';
+        if (l.level === 'SUCCESS') cls = 'log-success';
+        return `<div><span class="log-time">${time}</span> <span class="${cls}">[${l.level}]</span> ${l.message}</div>`;
+      }).reverse().join('');
+      
+      if (isScrolledToBottom) {
+          el.scrollTop = el.scrollHeight;
+      }
+    }
+
+    // ==================== UI STATE FUNCTIONS ====================
+    let modalCallback = null;
+    function navigateTo(page) {
+      document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
+      const target = document.getElementById('page-' + page);
+      if (target) {
+        target.classList.add('active');
+        target.querySelectorAll('.fade-up').forEach(el => {
+          el.style.animation = 'none'; el.offsetHeight; el.style.animation = '';
+        });
+      }
+      document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+      const sideItem = document.querySelector(`.sidebar-item[data-page="${page}"]`);
+      if (sideItem) sideItem.classList.add('active');
+      if (window.innerWidth <= 900) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('mobileOverlay').classList.remove('active');
+      }
+      if (page === 'logs') renderLogs('fullLogViewer', false);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const colorMap = { success: 'var(--accent)', warning: 'var(--warning)', danger: 'var(--danger)', info: 'var(--primary)' };
+      const iconMap = { success: 'check-circle', warning: 'alert-triangle', danger: 'x-circle', info: 'info' };
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<i data-lucide="${iconMap[type]}" style="width:18px;height:18px;color:${colorMap[type]};flex-shrink:0;"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+
+    function togglePasswordVisibility(id, btn) {
+      const input = document.getElementById(id);
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      const icon = btn.querySelector('i');
+      if (icon) icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    }
+
+    function openModal(title, message, callback) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      modalCallback = callback;
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); modalCallback = null; }
+    function confirmModalAction() { if (modalCallback) modalCallback(); closeModal(); }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('mobileOverlay').classList.toggle('active');
+    }
+    function handleResize() {
+      const menuBtn = document.getElementById('menuBtn');
+      if (window.innerWidth <= 900) {
+        menuBtn.style.display = 'inline-flex';
+      } else {
+        menuBtn.style.display = 'none';
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('mobileOverlay').classList.remove('active');
+      }
+    }
+  </script>
+ </body>
+</html>

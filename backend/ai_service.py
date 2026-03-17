@@ -1,0 +1,73 @@
+import os
+import google.generativeai as genai
+from openai import OpenAI
+from backend.config import load_settings
+from backend.database import log_action
+
+class AIService:
+    def __init__(self):
+        self.refresh_keys()
+        
+    def refresh_keys(self):
+        self.settings = load_settings()
+        self.openai_key = self.settings.get("openai_key")
+        self.gemini_key = self.settings.get("gemini_key")
+        
+        self.gemini_model = None
+        self.openai_client = None
+        
+        if self.gemini_key:
+            try:
+                genai.configure(api_key=self.gemini_key)
+                self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+            except Exception as e:
+                log_action("ERROR", f"Gemini Init Error: {e}", "AIService")
+        
+        if self.openai_key:
+            try:
+                self.openai_client = OpenAI(api_key=self.openai_key)
+            except Exception as e:
+                log_action("ERROR", f"OpenAI Init Error: {e}", "AIService")
+
+    def _generate(self, prompt):
+        self.refresh_keys() # Always check for updated keys
+        try:
+            if self.openai_client:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=300
+                )
+                return response.choices[0].message.content.strip()
+            elif self.gemini_model:
+                response = self.gemini_model.generate_content(prompt)
+                return response.text.strip()
+        except Exception as e:
+            log_action("ERROR", f"AI Generation Error: {e}", "AIService")
+        return None
+
+    def generate_readme(self, language, project_name):
+        prompt = f"Generate a brief, professional README.md for a {language} project named '{project_name}'. Do not include any conversational text, just the markdown."
+        content = self._generate(prompt)
+        return content if content else f"# {project_name}\n\nAuto-generated README."
+
+    def generate_gitignore(self, language):
+        prompt = f"Generate a standard .gitignore file for a {language} project. Just output the content, no markdown blocks if possible."
+        content = self._generate(prompt)
+        if content:
+            if content.startswith("```"):
+                lines = content.split('\n')
+                content = '\n'.join(lines[1:-1]) if len(lines) > 2 else content
+            return content
+        
+        # Fallbacks
+        if language.lower() == "python":
+            return "__pycache__/\n.venv/\n*.pyc\n"
+        elif language.lower() in ["node", "javascript", "typescript"]:
+            return "node_modules/\ndist/\n.env\n"
+        return ""
+
+    def generate_commit_message(self, diff):
+        prompt = f"Generate a concise git commit message (1 line) for the following diff. Only return the commit message, no quotes or prefix:\n\n{diff[:1500]}"
+        content = self._generate(prompt)
+        return content if content else "Auto sync update"

@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pystray
+watchdog
+GitPython
+PyGithub
+requests
+openai
+google-generativeai
+pyinstaller
+pillow
