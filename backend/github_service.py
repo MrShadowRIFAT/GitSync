@@ -54,13 +54,17 @@ class GitHubService:
         return None
 
     def get_user_repos(self):
-        if not self.gh: return []
+        if not self.gh:
+            log_action("ERROR", "GitHub Token is missing. Please add it in Settings.", "GitHubService")
+            return []
         user = self.execute_with_retry(self.gh.get_user)
         repos = self.execute_with_retry(user.get_repos)
         return list(repos)
         
     def create_repo(self, name, private=True):
-        if not self.gh: return None
+        if not self.gh:
+            log_action("ERROR", "GitHub Token is missing. Remote repo creation aborted.", "GitHubService")
+            return None
         try:
             user = self.execute_with_retry(self.gh.get_user)
             repo = self.execute_with_retry(user.create_repo, name, private=private, auto_init=False)
@@ -74,7 +78,9 @@ class GitHubService:
             raise e
         
     def delete_repo(self, repo_name):
-        if not self.gh: return False
+        if not self.gh:
+            log_action("ERROR", "GitHub Token is missing. Cannot automatically delete remote repo.", "GitHubService")
+            return False
         try:
             user = self.execute_with_retry(self.gh.get_user)
             repo = self.execute_with_retry(user.get_repo, repo_name)
