@@ -143,4 +143,25 @@ def main():
     icon.run()
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--browse-folder":
+        import tkinter as tk
+        from tkinter import filedialog
+        
+        output_file = None
+        if len(sys.argv) > 2:
+            output_file = sys.argv[2]
+            
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        path = filedialog.askdirectory(title="Select Workspace Folder")
+        root.destroy()
+        
+        if output_file:
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write(path if path else "")
+        elif path:
+            print(path)
+            
+        sys.exit(0)
     main()

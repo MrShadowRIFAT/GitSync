@@ -76,20 +76,33 @@ def api_get_workspaces():
 @app.get("/api/browse-folder")
 def api_browse_folder():
     try:
-        ps_cmd = (
-            "Add-Type -AssemblyName System.windows.forms; "
-            "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
-            "$f.Description = 'Select Workspace Folder'; "
-            "$f.ShowNewFolderButton = $true; "
-            "if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"
-        )
+        import sys
+        import tempfile
+        import os
+        
+        fd, tmp_path = tempfile.mkstemp(suffix=".txt")
+        os.close(fd)
+        
+        cmd = [sys.executable]
+        if not getattr(sys, 'frozen', False):
+            cmd.append("main.py")
+        cmd.extend(["--browse-folder", tmp_path])
+
         CREATE_NO_WINDOW = 0x08000000
-        # -Sta is required for Windows Forms dialogs
-        result = subprocess.run(
-            ["powershell", "-Sta", "-NoProfile", "-Command", ps_cmd],
-            capture_output=True, text=True, creationflags=CREATE_NO_WINDOW
+        subprocess.run(
+            cmd,
+            creationflags=CREATE_NO_WINDOW
         )
-        return {"path": result.stdout.strip()}
+        
+        with open(tmp_path, "r", encoding="utf-8") as f:
+            path = f.read().strip()
+            
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+            
+        return {"path": path}
     except Exception as e:
         log_action("ERROR", f"Failed to open native picker: {e}", "API")
         raise HTTPException(status_code=500, detail="Could not open browser dialog")
