@@ -196,6 +196,21 @@ def api_cancel_deletion(data: DeleteRepoModel):
     log_action("INFO", f"Cancelled deletion for {data.repo_name}", "API")
     return {"success": True}
 
+@app.post("/api/generate-readme")
+def api_generate_readme(data: SyncRepoModel):
+    import os as _os
+    local_path = data.local_path
+    if not _os.path.exists(local_path):
+        raise HTTPException(status_code=400, detail="Path does not exist")
+    files = _os.listdir(local_path)
+    lang = "node" if any(f.endswith((".js", ".ts")) or f == "package.json" for f in files) else "python"
+    content = sync_manager.ai.generate_readme(lang, _os.path.basename(local_path))
+    readme_path = _os.path.join(local_path, "README.md")
+    with open(readme_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    log_action("INFO", f"Generated README.md for {_os.path.basename(local_path)}", "API")
+    return {"success": True}
+
 # --- Static UI Serve ---
 import sys
 if getattr(sys, 'frozen', False):

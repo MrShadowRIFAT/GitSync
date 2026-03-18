@@ -550,6 +550,7 @@
           <td style="color:var(--text-muted);">${new Date(r.created_at).toLocaleString()}</td>
           <td style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="forceSync(decodeURIComponent('${safePath}'))"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Sync</button>
+            <button class="btn btn-accent btn-sm" onclick="generateReadme(decodeURIComponent('${safePath}'))"><i data-lucide="file-text" style="width:12px;height:12px;"></i> Gen README</button>
           </td>
         </tr>`
       }).join('');
@@ -571,6 +572,24 @@
             body: JSON.stringify({ local_path: path })
         });
         loadData();
+    }
+
+    async function generateReadme(path) {
+        showToast('Generating README for ' + path, 'info');
+        try {
+            const res = await fetch('/api/generate-readme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ local_path: path })
+            });
+            if (res.ok) {
+                showToast('README.md generated successfully!', 'success');
+            } else {
+                showToast('Failed to generate README', 'error');
+            }
+        } catch(e) {
+            showToast('Error generating README: ' + e, 'error');
+        }
     }
     
     async function forceSyncAll() {

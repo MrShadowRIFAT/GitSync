@@ -181,11 +181,6 @@ class SyncManager:
         lang = "python"
         if any(f.endswith(".js") or f.endswith(".ts") or f == "package.json" for f in files):
             lang = "node"
-            
-        if "README.md" not in [f.upper() for f in files]:
-            content = self.ai.generate_readme(lang, os.path.basename(local_path))
-            with open(os.path.join(local_path, "README.md"), "w", encoding="utf-8") as f:
-                f.write(content)
                 
         if ".gitignore" not in files:
             content = self.ai.generate_gitignore(lang)
