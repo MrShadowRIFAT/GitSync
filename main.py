@@ -59,19 +59,8 @@ from backend.api import app
 from backend.database import get_workspaces, update_workspace_status
 from backend.api import sync_manager
 
-# Step 2: Ensure internal config pathing is updated dynamically based on GITSYNC_HOME
-import backend.config
-backend.config.CONFIG_DIR = os.path.join(base_dir, "config")
-backend.config.CONFIG_PATH = os.path.join(base_dir, "config", "settings.json")
 
-import backend.database
-backend.database.DB_DIR = os.path.join(base_dir, "data")
-backend.database.DB_PATH = os.path.join(base_dir, "data", "gitsync.db")
-# Re-evaluate init_db since path changed
-backend.database.init_db()
 
-# Re-evaluate init_db since path changed
-backend.database.init_db()
 
 def open_dashboard():
     webbrowser.open(server_url)

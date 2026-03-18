@@ -16,8 +16,6 @@ from backend.watcher import SyncManager
 from backend.config import load_settings, save_settings
 from backend.github_service import GitHubService
 
-# Initialize Database before anything starts
-init_db()
 
 app = FastAPI()
 
@@ -59,6 +57,7 @@ def open_browser():
 
 @app.on_event("startup")
 def startup_event():
+    init_db()
     sync_manager.start_watching()
     log_action("INFO", "FastAPI server started", "API")
     # Open the browser immediately now that FastAPI is fully bound

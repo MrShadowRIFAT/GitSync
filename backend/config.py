@@ -1,11 +1,14 @@
 import os
 import json
 
-CONFIG_DIR = r"C:\Program Files\GitSync\config"
-if not os.path.exists(CONFIG_DIR) and not os.access(r"C:\Program Files", os.W_OK):
-    appdata = os.environ.get('LOCALAPPDATA', os.environ.get('APPDATA'))
-    CONFIG_DIR = os.path.join(appdata, "GitSync", "config")
+def get_config_dir():
+    home = os.environ.get("GITSYNC_HOME")
+    if home:
+        return os.path.join(home, "config")
+    appdata = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or os.path.expanduser("~")
+    return os.path.join(appdata, "GitSync", "config")
 
+CONFIG_DIR = get_config_dir()
 CONFIG_PATH = os.path.join(CONFIG_DIR, "settings.json")
 
 def load_settings():

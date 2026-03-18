@@ -1,11 +1,14 @@
 import sqlite3
 import os
 
-DB_DIR = r"C:\Program Files\GitSync\data"
-if not os.path.exists(DB_DIR) and not os.access(r"C:\Program Files", os.W_OK):
-    appdata = os.environ.get('LOCALAPPDATA', os.environ.get('APPDATA'))
-    DB_DIR = os.path.join(appdata, "GitSync", "data")
+def get_data_dir():
+    home = os.environ.get("GITSYNC_HOME")
+    if home:
+        return os.path.join(home, "data")
+    appdata = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or os.path.expanduser("~")
+    return os.path.join(appdata, "GitSync", "data")
 
+DB_DIR = get_data_dir()
 DB_PATH = os.path.join(DB_DIR, "gitsync.db")
 
 def get_connection():
