@@ -195,3 +195,19 @@ def remove_pending_deletion(repo_name):
     c.execute("DELETE FROM pending_deletions WHERE repo_name = ?", (repo_name,))
     conn.commit()
     conn.close()
+
+def clear_logs():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM action_logs")
+    conn.commit()
+    conn.close()
+
+def clear_cache():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM repo_mapping")
+    c.execute("DELETE FROM pending_deletions")
+    c.execute("DELETE FROM action_logs")
+    conn.commit()
+    conn.close()

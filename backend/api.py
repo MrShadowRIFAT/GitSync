@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.database import (
     get_workspaces, add_workspace, remove_workspace, update_workspace_status,
     get_repo_mappings, get_pending_deletions, remove_pending_deletion, get_logs,
-    log_action, init_db
+    log_action, init_db, clear_logs, clear_cache
 )
 from pydantic import BaseModel
 from backend.watcher import SyncManager
@@ -209,6 +209,18 @@ def api_generate_readme(data: SyncRepoModel):
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(content)
     log_action("INFO", f"Generated README.md for {_os.path.basename(local_path)}", "API")
+    return {"success": True}
+
+@app.post("/api/clear-logs")
+def api_clear_logs():
+    clear_logs()
+    log_action("INFO", "Logs cleared by user", "API")
+    return {"success": True}
+
+@app.post("/api/clear-cache")
+def api_clear_cache():
+    clear_cache()
+    log_action("INFO", "All cache data cleared by user", "API")
     return {"success": True}
 
 # --- Static UI Serve ---
