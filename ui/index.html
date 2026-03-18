@@ -305,7 +305,8 @@
         </div>
         <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
          <div>
-             <label for="ghToken" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">API Token (Required)</label>
+             <label for="ghToken" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px;">API Token (Required)</label>
+             <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="font-size:11px; color:var(--primary); text-decoration:none; margin-bottom:6px; display:inline-block;">Get your API Token →</a>
              <div style="position:relative;">
                  <input type="password" id="ghToken" class="input-field" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="padding-right:40px;" required>
                  <button type="button" onclick="togglePasswordVisibility('ghToken', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
@@ -320,14 +321,16 @@
         </div>
         <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
          <div>
-             <label for="openaiKey" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">OpenAI API Key (Generates missing Readme & Commits)</label>
+             <label for="openaiKey" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px;">OpenAI API Key (Generates missing Readme &amp; Commits)</label>
+             <a href="https://platform.openai.com/settings/organization/api-keys" target="_blank" style="font-size:11px; color:var(--primary); text-decoration:none; margin-bottom:6px; display:inline-block;">Get your OpenAI Key →</a>
              <div style="position:relative;">
                  <input type="password" id="openaiKey" class="input-field" placeholder="sk-xxxxxxxxxxxxxxxxxxxx" style="padding-right:40px;">
                  <button type="button" onclick="togglePasswordVisibility('openaiKey', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
              </div>
          </div>
          <div>
-             <label for="geminiKey" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Gemini API Key (Fallback AI)</label>
+             <label for="geminiKey" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px;">Gemini API Key (Fallback AI)</label>
+             <a href="https://aistudio.google.com/app/api-keys" target="_blank" style="font-size:11px; color:var(--primary); text-decoration:none; margin-bottom:6px; display:inline-block;">Get your Gemini Key →</a>
              <div style="position:relative;">
                  <input type="password" id="geminiKey" class="input-field" placeholder="AIzaxxxxxxxxxxxxxxxxxx" style="padding-right:40px;">
                  <button type="button" onclick="togglePasswordVisibility('geminiKey', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
