@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.database import (
     get_workspaces, add_workspace, remove_workspace, update_workspace_status,
     get_repo_mappings, get_pending_deletions, remove_pending_deletion, get_logs,
-    log_action, init_db, clear_logs, clear_cache
+    log_action, init_db, clear_logs, clear_cache, update_repo_name
 )
 from pydantic import BaseModel
 from backend.watcher import SyncManager
@@ -38,6 +38,7 @@ class SettingsModel(BaseModel):
     github_token: str = ""
     openai_key: str = ""
     gemini_key: str = ""
+    sync_interval: int = 3
 
 class DeleteRepoModel(BaseModel):
     repo_name: str
@@ -47,6 +48,14 @@ class SyncRepoModel(BaseModel):
 
 class PauseWorkspaceModel(BaseModel):
     path: str
+
+class RenameRepoModel(BaseModel):
+    old_name: str
+    new_name: str
+
+class VisibilityModel(BaseModel):
+    repo_name: str
+    private: bool
 
 # --- Endpoints ---
 
@@ -222,6 +231,44 @@ def api_clear_cache():
     clear_cache()
     log_action("INFO", "All cache data cleared by user", "API")
     return {"success": True}
+
+@app.post("/api/rename-repo")
+def api_rename_repo(data: RenameRepoModel):
+    success = sync_manager.gh.rename_repo(data.old_name, data.new_name)
+    if success:
+        update_repo_name(data.old_name, data.new_name)
+        return {"success": True}
+    raise HTTPException(status_code=500, detail="Failed to rename repository")
+
+@app.post("/api/toggle-visibility")
+def api_toggle_visibility(data: VisibilityModel):
+    success = sync_manager.gh.toggle_visibility(data.repo_name, data.private)
+    if success:
+        return {"success": True}
+    raise HTTPException(status_code=500, detail="Failed to toggle visibility")
+
+@app.get("/api/stats")
+def api_stats():
+    import os as _os
+    workspaces_list = get_workspaces()
+    repos = get_repo_mappings()
+    total_size = 0
+    for ws in workspaces_list:
+        path = ws["path"]
+        if _os.path.exists(path):
+            for dirpath, dirnames, filenames in _os.walk(path):
+                for f in filenames:
+                    try:
+                        total_size += _os.path.getsize(_os.path.join(dirpath, f))
+                    except OSError:
+                        pass
+    return {
+        "workspace_count": len(workspaces_list),
+        "repo_count": len(repos),
+        "total_size_bytes": total_size,
+        "total_size_mb": round(total_size / (1024 * 1024), 1),
+        "total_size_display": f"{round(total_size / (1024*1024*1024), 2)} GB" if total_size > 1024*1024*1024 else f"{round(total_size / (1024*1024), 1)} MB"
+    }
 
 # --- Static UI Serve ---
 import sys

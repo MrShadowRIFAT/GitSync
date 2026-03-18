@@ -7,6 +7,7 @@ from backend.database import (
     get_workspaces, get_repo_mapping_by_path, get_repo_mapping_by_name, add_repo_mapping, 
     remove_repo_mapping, add_pending_deletion, log_action
 )
+from backend.config import load_settings
 from backend.github_service import GitHubService
 from backend.ai_service import AIService
 import git
@@ -26,8 +27,8 @@ class GitSyncHandler(FileSystemEventHandler):
             self._changed_repos.add(repo_path)
             if self._timer:
                 self._timer.cancel()
-            # Wait 3 seconds of inactivity before syncing
-            self._timer = threading.Timer(3.0, self._perform_sync)
+            interval = float(load_settings().get('sync_interval', 3))
+            self._timer = threading.Timer(interval, self._perform_sync)
             self._timer.start()
 
     def _perform_sync(self):

@@ -211,3 +211,11 @@ def clear_cache():
     c.execute("DELETE FROM action_logs")
     conn.commit()
     conn.close()
+
+def update_repo_name(old_name, new_name):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("UPDATE repo_mapping SET repo_name = ?, github_repo = REPLACE(github_repo, ?, ?) WHERE repo_name = ?",
+              (new_name, old_name, new_name, old_name))
+    conn.commit()
+    conn.close()

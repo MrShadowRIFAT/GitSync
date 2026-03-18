@@ -91,6 +91,35 @@ class GitHubService:
             log_action("ERROR", f"Failed to delete {repo_name}: {e}", "GitHubService")
             return False
 
+    def rename_repo(self, old_name, new_name):
+        if not self.gh:
+            log_action("ERROR", "GitHub Token is missing.", "GitHubService")
+            return False
+        try:
+            user = self.execute_with_retry(self.gh.get_user)
+            repo = self.execute_with_retry(user.get_repo, old_name)
+            repo.edit(name=new_name)
+            log_action("INFO", f"Renamed repository: {old_name} -> {new_name}", "GitHubService")
+            return True
+        except Exception as e:
+            log_action("ERROR", f"Failed to rename {old_name}: {e}", "GitHubService")
+            return False
+
+    def toggle_visibility(self, repo_name, private):
+        if not self.gh:
+            log_action("ERROR", "GitHub Token is missing.", "GitHubService")
+            return False
+        try:
+            user = self.execute_with_retry(self.gh.get_user)
+            repo = self.execute_with_retry(user.get_repo, repo_name)
+            repo.edit(private=private)
+            vis = "Private" if private else "Public"
+            log_action("INFO", f"Changed {repo_name} visibility to {vis}", "GitHubService")
+            return True
+        except Exception as e:
+            log_action("ERROR", f"Failed to toggle visibility for {repo_name}: {e}", "GitHubService")
+            return False
+
     def clone_repo(self, clone_url, local_path):
         if "://" in clone_url and self.token:
             auth_url = clone_url.replace("https://", f"https://{self.token}@")
