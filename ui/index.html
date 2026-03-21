@@ -507,8 +507,15 @@
 
     
     // --- Onboarding Logic ---
-    function checkOnboarding() {
-        if (!localStorage.getItem('gitsync-onboarded')) {
+    async function checkOnboarding() {
+        try {
+            const settings = await fetch('/api/settings').then(r => r.json());
+            if (!settings.github_token) {
+                document.getElementById('onboardingWizard').classList.add('active');
+            } else {
+                localStorage.setItem('gitsync-onboarded', 'true');
+            }
+        } catch(e) {
             document.getElementById('onboardingWizard').classList.add('active');
         }
     }
