@@ -405,6 +405,17 @@
                  <button type="button" onclick="togglePasswordVisibility('ghToken', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="eye" style="width:16px; height:16px;"></i></button>
              </div>
          </div>
+         <div style="grid-column: 1 / -1; margin-top: 10px;">
+             <label for="readmeTemplate" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Custom README Template (Markdown)</label>
+             <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">If provided, the AI will strictly follow this structure. Leave empty to use the default intelligent generation.</p>
+             <textarea id="readmeTemplate" class="input-field" placeholder="# {Project Name}
+
+## Description
+
+## Installation
+
+## Usage" style="min-height: 150px; font-family: 'JetBrains Mono', monospace; font-size: 13px; resize: vertical;"></textarea>
+         </div>
         </div>
        </div>
        
@@ -654,6 +665,8 @@
         if (settings.github_token) document.getElementById('ghToken').value = settings.github_token;
         if (settings.openai_key) document.getElementById('openaiKey').value = settings.openai_key;
         if (settings.gemini_key) document.getElementById('geminiKey').value = settings.gemini_key;
+        if (settings.sync_interval) document.getElementById('syncInterval').value = settings.sync_interval;
+        if (settings.readme_template) document.getElementById('readmeTemplate').value = settings.readme_template;
 
         if (settings.github_profile) {
             githubUser = settings.github_profile.login || 'User';
@@ -671,7 +684,8 @@
             github_token: document.getElementById('ghToken').value,
             openai_key: document.getElementById('openaiKey').value,
             gemini_key: document.getElementById('geminiKey').value,
-            sync_interval: parseInt(document.getElementById('syncInterval').value) || 3
+            sync_interval: parseInt(document.getElementById('syncInterval').value) || 3,
+            readme_template: document.getElementById('readmeTemplate').value
         };
 
         const res = await fetch('/api/settings', {

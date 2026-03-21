@@ -47,7 +47,12 @@ class AIService:
         return None
 
     def generate_readme(self, language, project_name):
-        prompt = f"Generate a brief, professional README.md for a {language} project named '{project_name}'. Do not include any conversational text, just the markdown."
+        self.refresh_keys()
+        template = self.settings.get("readme_template", "").strip()
+        if template:
+            prompt = f"Generate a README.md for a {language} project named '{project_name}'. Use the following template exactly as the structure and fill in the blanks/details accordingly:\n\n{template}\n\nDo not include any conversational text, just the markdown."
+        else:
+            prompt = f"Generate a brief, professional README.md for a {language} project named '{project_name}'. Do not include any conversational text, just the markdown."
         content = self._generate(prompt)
         return content if content else f"# {project_name}\n\nAuto-generated README."
 

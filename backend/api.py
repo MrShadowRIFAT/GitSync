@@ -39,6 +39,7 @@ class SettingsModel(BaseModel):
     openai_key: str = ""
     gemini_key: str = ""
     sync_interval: int = 3
+    readme_template: str = ""
 
 class DeleteRepoModel(BaseModel):
     repo_name: str
