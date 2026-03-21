@@ -10,3 +10,4 @@ build/
 data/
 config/
 logs/
+backend/secrets.json

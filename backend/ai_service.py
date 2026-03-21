@@ -29,6 +29,30 @@ class AIService:
             except Exception as e:
                 log_action("ERROR", f"OpenAI Init Error: {e}", "AIService")
 
+        groq_api_key = None
+        try:
+            import sys
+            import json
+            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            secrets_path = os.path.join(base_path, 'backend', 'secrets.json')
+            if os.path.exists(secrets_path):
+                with open(secrets_path, 'r') as f:
+                    secrets = json.load(f)
+                    groq_api_key = secrets.get('GROQ_API_KEY')
+        except Exception:
+            pass
+
+        if groq_api_key:
+            try:
+                self.groq_client = OpenAI(
+                    api_key=groq_api_key,
+                    base_url="https://api.groq.com/openai/v1"
+                )
+            except Exception:
+                self.groq_client = None
+        else:
+            self.groq_client = None
+
     def _generate(self, prompt):
         self.refresh_keys() # Always check for updated keys
         try:
@@ -42,6 +66,13 @@ class AIService:
             elif self.gemini_model:
                 response = self.gemini_model.generate_content(prompt)
                 return response.text.strip()
+            elif self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model="llama3-8b-8192",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=300
+                )
+                return response.choices[0].message.content.strip()
         except Exception as e:
             log_action("ERROR", f"AI Generation Error: {e}", "AIService")
         return None
