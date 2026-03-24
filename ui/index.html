@@ -651,6 +651,18 @@
         pendingDeletions = await fetch('/api/pending-deletions').then(r => r.json());
         logEntries = await fetch('/api/logs').then(r => r.json());
         
+        if (typeof window.lastLogId === 'undefined') window.lastLogId = logEntries.length > 0 ? logEntries[0].id : 0;
+        let newLogId = window.lastLogId;
+        logEntries.forEach(log => {
+            if (log.id > window.lastLogId) {
+                newLogId = Math.max(newLogId, log.id);
+                if (log.level === 'DUPLICATE_REPO') {
+                    showToast('Same name repo is already existed', 'danger');
+                }
+            }
+        });
+        window.lastLogId = newLogId;
+        
         document.getElementById('statWs').textContent = workspaces.length;
         document.getElementById('statRepos').textContent = repositories.length;
         document.getElementById('statDels').textContent = pendingDeletions.length;

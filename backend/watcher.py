@@ -133,6 +133,11 @@ class SyncManager:
         mapping = get_repo_mapping_by_path(local_path)
         
         if not mapping:
+            existing_name_mapping = get_repo_mapping_by_name(repo_name)
+            if existing_name_mapping:
+                log_action("DUPLICATE_REPO", f"Same name repo is already existed: {repo_name}", "Watcher")
+                return
+
             log_action("INFO", f"Detected new untracked local folder: {repo_name}", "Watcher")
             
             # Determine visibility from workspace
