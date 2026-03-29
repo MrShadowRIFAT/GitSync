@@ -12,6 +12,22 @@ from backend.github_service import GitHubService
 from backend.ai_service import AIService
 import git
 
+def send_desktop_notification(title, message):
+    try:
+        from plyer import notification
+        import threading
+        def _notify():
+            notification.notify(
+                title=title,
+                message=message,
+                app_name="GitSync",
+                app_icon="ui/assets/logo.ico" if os.path.exists("ui/assets/logo.ico") else None,
+                timeout=5
+            )
+        threading.Thread(target=_notify, daemon=True).start()
+    except:
+        pass
+
 class GitSyncHandler(FileSystemEventHandler):
     def __init__(self, workspace_path, github_service, ai_service, sync_manager):
         self.workspace_path = workspace_path
@@ -81,6 +97,7 @@ class SyncManager:
         self.gh = GitHubService()
         self.ai = AIService()
         self.lock = threading.Lock()
+        self.stop_scheduler = threading.Event()
         
     def start_watching(self):
         workspaces = get_workspaces()
@@ -91,8 +108,10 @@ class SyncManager:
 
         # Full sync on startup
         threading.Thread(target=self.full_startup_sync, daemon=True).start()
+        threading.Thread(target=self.release_scheduler_loop, daemon=True).start()
         
     def stop_watching(self):
+        self.stop_scheduler.set()
         with self.lock:
             for obs in self.observers.values():
                 obs.stop()
@@ -124,6 +143,45 @@ class SyncManager:
         self.observers[path] = observer
         log_action("INFO", f"Started watching workspace: {path}", "Watcher")
 
+    def release_scheduler_loop(self):
+        from backend.database import get_scheduled_uploads, remove_scheduled_upload
+        import shutil
+        from datetime import datetime
+        log_action("INFO", "Started release scheduler loop", "Scheduler")
+        while not self.stop_scheduler.is_set():
+            try:
+                uploads = get_scheduled_uploads()
+                now = datetime.now()
+                for u in uploads:
+                    try: sched_time = datetime.fromisoformat(u["scheduled_at"])
+                    except: continue
+                        
+                    if sched_time <= now:
+                        staging_path = u["staging_path"]
+                        target_ws = u["target_workspace"]
+                        rel_path = u["relative_target_path"]
+                        
+                        # Use os.path.normpath to safely join the relative path
+                        target_full = os.path.normpath(os.path.join(target_ws, rel_path, u["file_name"]))
+                        
+                        target_dir = os.path.dirname(target_full)
+                        os.makedirs(target_dir, exist_ok=True)
+                        
+                        if os.path.exists(staging_path):
+                            shutil.copy2(staging_path, target_full)
+                            try: os.remove(staging_path)
+                            except: pass
+                            log_action("INFO", f"Released scheduled upload: {u['file_name']} into {target_ws}", "Scheduler")
+                        else:
+                            log_action("WARNING", f"Scheduled file missing from staging: {staging_path}", "Scheduler")
+                            
+                        remove_scheduled_upload(u["id"])
+            except Exception as e:
+                log_action("ERROR", f"Scheduler loop error: {e}", "Scheduler")
+            
+            self.stop_scheduler.wait(10.0)
+
+
     def sync_local_repo(self, local_path):
         if not os.path.exists(local_path):
             log_action("WARNING", f"Path no longer exists, skipping sync: {local_path}", "Watcher")
@@ -136,6 +194,7 @@ class SyncManager:
             existing_name_mapping = get_repo_mapping_by_name(repo_name)
             if existing_name_mapping:
                 log_action("DUPLICATE_REPO", f"Same name repo is already existed: {repo_name}", "Watcher")
+                send_desktop_notification("GitSync Warning", f"A repo named '{repo_name}' already exists.")
                 return
 
             log_action("INFO", f"Detected new untracked local folder: {repo_name}", "Watcher")
@@ -178,8 +237,22 @@ class SyncManager:
             origin = repo.remotes.origin
             origin.push()
             log_action("INFO", f"Pushed updates to {repo_name}: {commit_msg}", "Watcher")
+            
+            # Clear any previously resolved conflicts if successful
+            from backend.database import remove_conflict
+            remove_conflict(repo_name)
+            
         except Exception as e:
-            log_action("ERROR", f"Sync process failed for {local_path}: {e}", "Watcher")
+            err_msg = str(e)
+            log_action("ERROR", f"Sync process failed for {local_path}: {err_msg}", "Watcher")
+            
+            # Prevent annoying users heavily, only notify on fatal push/auth/conflict errors
+            if "fetch first" in err_msg or "non-fast-forward" in err_msg or "conflict" in err_msg.lower():
+                from backend.database import add_conflict
+                add_conflict(repo_name, local_path, "Remote changes conflict with your local files.")
+                send_desktop_notification("GitSync Conflict", f"Push rejected for {repo_name}. Please resolve in dashboard.")
+            elif "403" in err_msg or "401" in err_msg:
+                send_desktop_notification("GitSync Error", f"Sync auth failed for {repo_name}!")
             
     def _ensure_project_files(self, local_path):
         files = os.listdir(local_path)

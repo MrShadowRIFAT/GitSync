@@ -1,6 +1,9 @@
 import os
 import json
 
+APP_VERSION = "2.2.1"
+GITHUB_REPO = "MrShadowRIFAT/GitSync"
+
 def get_config_dir():
     home = os.environ.get("GITSYNC_HOME")
     if home:

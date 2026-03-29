@@ -62,6 +62,29 @@ def init_db():
         )
     ''')
     
+    # Conflicts
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conflicts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            repo_name TEXT UNIQUE,
+            local_path TEXT,
+            error_message TEXT,
+            detected_at TEXT
+        )
+    ''')
+    
+    # Scheduled Uploads
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS scheduled_uploads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_name TEXT,
+            staging_path TEXT,
+            target_workspace TEXT,
+            relative_target_path TEXT,
+            scheduled_at TEXT
+        )
+    ''')
+    
     conn.commit()
     conn.close()
 
@@ -189,6 +212,35 @@ def add_pending_deletion(repo_name, reason):
     finally:
         conn.close()
 
+# --- Conflicts ---
+def add_conflict(repo_name, local_path, error_message):
+    conn = get_connection()
+    c = conn.cursor()
+    from datetime import datetime
+    try:
+        c.execute("INSERT OR REPLACE INTO conflicts (repo_name, local_path, error_message, detected_at) VALUES (?, ?, ?, ?)",
+                  (repo_name, local_path, error_message, datetime.now().isoformat()))
+        conn.commit()
+    except:
+        pass
+    finally:
+        conn.close()
+
+def get_conflicts():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM conflicts")
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def remove_conflict(repo_name):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM conflicts WHERE repo_name = ?", (repo_name,))
+    conn.commit()
+    conn.close()
+
 def remove_pending_deletion(repo_name):
     conn = get_connection()
     c = conn.cursor()
@@ -212,10 +264,38 @@ def clear_cache():
     conn.commit()
     conn.close()
 
-def update_repo_name(old_name, new_name):
+def update_repo_name(old_name, new_name, new_path):
     conn = get_connection()
     c = conn.cursor()
-    c.execute("UPDATE repo_mapping SET repo_name = ?, github_repo = REPLACE(github_repo, ?, ?) WHERE repo_name = ?",
-              (new_name, old_name, new_name, old_name))
+    c.execute("UPDATE repo_mapping SET repo_name = ?, local_path = ?, github_repo = REPLACE(github_repo, ?, ?) WHERE repo_name = ?",
+              (new_name, new_path, old_name, new_name, old_name))
+    conn.commit()
+    conn.close()
+
+# --- Scheduled Uploads ---
+def add_scheduled_upload(file_name, staging_path, target_workspace, relative_target_path, scheduled_at):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO scheduled_uploads (file_name, staging_path, target_workspace, relative_target_path, scheduled_at)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (file_name, staging_path, target_workspace, relative_target_path, scheduled_at))
+    upload_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return upload_id
+
+def get_scheduled_uploads():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM scheduled_uploads ORDER BY scheduled_at ASC")
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def remove_scheduled_upload(upload_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM scheduled_uploads WHERE id = ?", (upload_id,))
     conn.commit()
     conn.close()

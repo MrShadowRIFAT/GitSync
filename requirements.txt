@@ -9,3 +9,6 @@ openai
 google-generativeai
 pyinstaller
 pillow
+plyer
+windnd
+python-multipart

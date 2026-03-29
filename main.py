@@ -9,6 +9,7 @@ import time
 import asyncio
 import uvicorn
 import pystray
+import json
 from pystray import MenuItem as item
 from PIL import Image, ImageDraw
 
@@ -48,8 +49,29 @@ def find_free_port():
         s.bind(('', 0))
         return s.getsockname()[1]
 
-server_port = find_free_port()
-server_url = f"http://127.0.0.1:{server_port}/"
+def get_custom_port():
+    settings_file = os.path.join(base_dir, "config", "settings.json")
+    try:
+        if os.path.exists(settings_file):
+            with open(settings_file, "r", encoding="utf-8") as f:
+                settings = json.load(f)
+                port = int(settings.get("custom_port", 0))
+                if port > 0:
+                    return port
+    except Exception:
+        pass
+    return 0
+
+custom_port = get_custom_port()
+if custom_port > 0:
+    server_port = custom_port
+    server_host = "0.0.0.0"  # Expose to local network
+    # For opening local browser, still use localhost
+    server_url = f"http://127.0.0.1:{server_port}/"
+else:
+    server_port = find_free_port()
+    server_host = "127.0.0.1"
+    server_url = f"http://127.0.0.1:{server_port}/"
 
 # Pass the port to the backend seamlessly
 os.environ["GITSYNC_PORT"] = str(server_port)
@@ -94,7 +116,7 @@ def create_image():
     return image
 
 def run_server():
-    config = uvicorn.Config(app, host="127.0.0.1", port=server_port, log_level="warning")
+    config = uvicorn.Config(app, host=server_host, port=server_port, log_level="warning")
     server = uvicorn.Server(config)
     asyncio.run(server.serve())
 

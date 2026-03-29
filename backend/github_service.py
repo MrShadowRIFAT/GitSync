@@ -23,8 +23,12 @@ class GitHubService:
             except RateLimitExceededException:
                 log_action("WARNING", "GitHub API Rate limit exceeded. Waiting 60 seconds...", "GitHubService")
                 time.sleep(60)
+            except GithubException as e:
+                if e.status != 422:
+                    log_action("ERROR", f"GitHub API Error: {e.status} {e.data}", "GitHubService")
+                raise e
             except Exception as e:
-                log_action("ERROR", f"GitHub API Error: {e}", "GitHubService")
+                log_action("ERROR", f"GitHub System Error: {e}", "GitHubService")
                 raise e
 
     def get_user_profile(self):

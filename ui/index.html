@@ -125,11 +125,20 @@
     .page.active { display: block; opacity: 1; }
 
     @media (max-width: 900px) {
-      .sidebar { position: fixed; left: 0; top: 0; z-index: 800; transform: translateX(-100%); }
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; height:100vh; z-index: 800; transform: translateX(-100%); width: 260px; }
       .sidebar.open { transform: translateX(0); }
       .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 799; display: none; }
       .mobile-overlay.active { display: block; }
+      #menuBtn { display: flex !important; }
+      .topbar { padding: 16px; }
+      .main-content { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .toast { margin-left:16px; margin-right:16px; max-width:100%; }
+      .card-header { padding: 16px; }
+      .card-body { padding: 16px; }
     }
+    
+    #menuBtn { display: none; align-items: center; justify-content: center; }
 
     .stat-card { background: linear-gradient(135deg, rgba(22, 27, 34, 0.8), rgba(22, 27, 34, 0.6)); border: 1px solid rgba(48, 54, 61, 0.5); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
     .stat-card:hover { border-color: rgba(58, 134, 255, 0.3); box-shadow: 0 0 12px rgba(58, 134, 255, 0.1); }
@@ -148,6 +157,14 @@
     .progress-bar.active { opacity: 1; }
     .progress-bar-inner { height: 100%; width: 30%; background: linear-gradient(90deg, var(--primary), #a78bfa, var(--primary)); border-radius: 0 2px 2px 0; animation: progressSlide 1.2s ease-in-out infinite; }
     @keyframes progressSlide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+
+    /* Premium toggle switch */
+    .toggle-switch { position:relative; width:40px; height:22px; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:var(--border); border-radius:22px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .toggle-slider:before { content:""; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:white; border-radius:50%; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .toggle-switch input:checked + .toggle-slider { background:linear-gradient(135deg, var(--accent), #22d3ee); box-shadow: 0 0 8px rgba(63,185,80,0.4); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
   </style>
  </head>
  <body class="h-full">
@@ -237,7 +254,7 @@
     </div>
     <div style="padding: 12px 16px; border-top: 1px solid var(--border);">
      <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-muted);">
-         <span class="pulse-dot"></span> <span id="sidebarStatus">Connected</span>
+         <span class="pulse-dot"></span> <span id="sidebarStatus">v...</span>
      </div>
     </div>
    </aside>
@@ -245,7 +262,7 @@
    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
     <header class="topbar">
      <div style="display:flex; align-items:center; gap:16px;">
-         <button class="btn-ghost btn" onclick="toggleSidebar()" style="display:none; padding:6px;" id="menuBtn"> <i data-lucide="menu" style="width:20px; height:20px;"></i> </button>
+         <button class="btn-ghost btn" onclick="toggleSidebar()" style="padding:6px;" id="menuBtn"> <i data-lucide="menu" style="width:20px; height:20px;"></i> </button>
          <h1 id="topbarTitle" style="font-size:16px; font-weight:600;">GitSync</h1>
      </div>
      <div style="display:flex; align-items:center; gap:16px;">
@@ -257,6 +274,10 @@
       </div>
       <div style="width:1px; height:24px; background:var(--border);"></div>
 
+       <button class="btn btn-ghost btn-sm" id="updateBtn" onclick="checkForUpdate(true)" aria-label="Check for updates" style="padding:6px; display:flex; align-items:center; gap:4px; position:relative;" title="Check for updates">
+        <i data-lucide="download" style="width:18px; height:18px;"></i>
+        <span id="updateDot" style="display:none; position:absolute; top:2px; right:2px; width:8px; height:8px; background:var(--accent); border-radius:50%; animation:pulse 2s infinite;"></span>
+       </button>
        <button class="btn btn-ghost btn-sm" onclick="toggleTheme()" aria-label="Toggle theme" style="padding:6px;"><i data-lucide="moon" id="themeIcon" style="width:18px; height:18px;"></i></button>
       <button class="btn btn-ghost btn-sm" onclick="showToast('Profile: ' + githubUser, 'info')" aria-label="User menu">
        <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--primary), #a78bfa); display:flex; align-items:center; justify-content:center; overflow:hidden;">
@@ -268,6 +289,28 @@
     </header>
     
     <main style="flex:1; overflow-y:auto; overflow-x:hidden; padding:24px;" id="mainContent">
+    
+      <div id="conflictBanner" style="display:none; background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239,68,68,0.3); border-left:4px solid var(--danger); padding:16px; border-radius:8px; margin-bottom:24px; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i data-lucide="alert-octagon" style="color:var(--danger); width:20px; height:20px;"></i>
+            <div>
+                <h3 style="font-size:14px; font-weight:600; color:var(--danger); margin:0 0 4px 0;">Sync Conflict Detected</h3>
+                <p style="font-size:12px; color:var(--text); margin:0;" id="conflictBannerText">Repositories have conflicting remote changes.</p>
+            </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="showResolveModal()">Resolve Now</button>
+      </div>
+
+      <div class="modal-overlay" id="resolveModalOverlay">
+       <div class="modal">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+         <h2 style="font-size:16px; font-weight:600; margin:0;">Resolve Conflicts</h2>
+         <button class="btn btn-ghost" style="padding:4px;" onclick="closeResolveModal()"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+        </div>
+        <div id="conflictList" style="display:flex; flex-direction:column; gap:12px;"></div>
+       </div>
+      </div>
+      
      <!-- Dashboard Page -->
      <section class="page active" id="page-dashboard">
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:24px;">
@@ -330,6 +373,64 @@
          </thead>
          <tbody></tbody>
         </table>
+       </div>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:24px;">
+       <div class="card fade-up fade-up-1">
+        <div class="card-header">
+         <h2 style="font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px;"><i data-lucide="calendar-plus" style="width:16px;height:16px;color:var(--primary);"></i> Schedule Upload</h2>
+        </div>
+        <div class="card-body">
+         <form id="scheduleUploadForm" onsubmit="handleScheduleUpload(event)" style="display:flex; flex-direction:column; gap:14px;">
+          <div>
+           <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Target Workspace</label>
+           <select id="scheduleWsSelect" class="input-field" required></select>
+          </div>
+          <div>
+           <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Relative Path (Optional)</label>
+           <input type="text" id="scheduleRelPath" class="input-field" placeholder="e.g. src/components">
+          </div>
+          <div>
+           <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Deploy Date & Time</label>
+           <input type="datetime-local" id="scheduleTime" class="input-field" required>
+          </div>
+          <div>
+           <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Select Files or Folder</label>
+           <input type="file" id="scheduleFiles" style="display:none;" multiple>
+           <input type="file" id="scheduleFolders" style="display:none;" multiple webkitdirectory>
+           <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-accent btn-sm" onclick="document.getElementById('scheduleFiles').click()" style="flex:1; padding:10px 14px; display:flex; align-items:center; justify-content:center; gap:6px;">
+             <i data-lucide="file-up" style="width:16px;height:16px;"></i> Upload Files
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('scheduleFolders').click()" style="flex:1; padding:10px 14px; display:flex; align-items:center; justify-content:center; gap:6px; border:1px dashed var(--border);">
+             <i data-lucide="folder-up" style="width:16px;height:16px;"></i> Upload Folder
+            </button>
+           </div>
+           <div id="uploadFilesList" style="margin-top:8px; font-size:11px; color:var(--text-muted);"></div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:4px;"><i data-lucide="upload-cloud" style="width:16px;height:16px;"></i> Stage & Schedule</button>
+         </form>
+        </div>
+       </div>
+       
+       <div class="card fade-up fade-up-2">
+        <div class="card-header">
+         <h2 style="font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px;"><i data-lucide="clock" style="width:16px;height:16px;color:var(--warning);"></i> Pending Schedules</h2>
+        </div>
+        <div style="overflow-x:auto;">
+         <table class="data-table" id="scheduledUploadsTable">
+          <thead>
+           <tr>
+            <th>File</th>
+            <th>Target</th>
+            <th>Release Time</th>
+            <th></th>
+           </tr>
+          </thead>
+          <tbody id="scheduledUploadsBody"></tbody>
+         </table>
+        </div>
        </div>
       </div>
      </section>
@@ -448,25 +549,43 @@
         <div class="card-header" style="border-bottom:1px solid rgba(48,54,61,0.5);">
          <h3 style="font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;"><i data-lucide="clock" style="width:16px;height:16px;color:var(--primary);"></i> Sync Settings</h3>
         </div>
-        <div class="card-body">
-         <label for="syncInterval" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Sync Interval</label>
-         <select id="syncInterval" class="input-field" style="max-width:300px;">
+        <div class="card-body" style="display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; padding:14px 20px;">
+         <div style="flex:0 0 auto;">
+          <label for="syncInterval" style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Sync Interval</label>
+          <select id="syncInterval" class="input-field" style="min-width:200px;">
             <option value="3">3 Seconds (Default)</option>
             <option value="5">5 Seconds</option>
             <option value="15">15 Seconds</option>
             <option value="30">30 Seconds</option>
             <option value="60">1 Minute</option>
             <option value="300">5 Minutes</option>
-         </select>
-        </div>
-       </div>
-<div class="card fade-up fade-up-2" style="grid-column:1/3;">
-        <div class="card-body" style="display:flex; gap:12px; justify-content:flex-end;">
+          </select>
+         </div>
+         <div style="flex:0 0 auto; display:flex; align-items:center; gap:10px; background:var(--surface-light); padding:8px 14px; border-radius:8px; border:1px solid var(--border);">
+          <i data-lucide="refresh-cw" style="width:14px;height:14px;color:var(--accent);"></i>
+          <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">Auto Update</span>
+          <label class="toggle-switch">
+           <input type="checkbox" id="autoUpdateToggle" checked>
+           <span class="toggle-slider"></span>
+          </label>
+         </div>
+         <div style="flex:0 0 auto; display:flex; flex-direction:column;">
+          <label for="customPort" style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Static Port (0 = Random)</label>
+          <input type="number" id="customPort" class="input-field" placeholder="e.g. 8080" style="min-width:140px;" min="0" max="65535">
+         </div>
+         <div style="flex:1;">
+             <span id="currentNetworkAddress" style="font-size:11px; color:var(--text-muted); float:right; background:var(--surface-dark); padding:4px 8px; border-radius:4px; border:1px solid var(--border);"></span>
+         </div>
          <button type="button" class="btn btn-sm" style="background:var(--error);color:white;" onclick="clearCache()"><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Clear All Cache</button>
          <button type="submit" class="btn btn-primary"><i data-lucide="save" style="width:14px;height:14px;"></i> Save All Settings</button>
         </div>
        </div>
       </form>
+      
+      <!-- Copyright Footer -->
+      <div style="grid-column:1/3; text-align:center; padding: 20px 0; margin-top: 10px; font-size:12px; color:var(--text-muted); border-top: 1px solid rgba(48,54,61,0.5);">
+        Copyright &copy; 2026 GitSync. Created by <a href="https://github.com/MrShadowRIFAT" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600; transition: color 0.2s;">MrShadowRIFAT</a>
+      </div>
      </section>
      
      <!-- Logs Page -->
@@ -498,13 +617,89 @@
    </div>
   </div>
   
+  <div class="modal-overlay" id="promptModalOverlay">
+   <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="promptModalTitle" style="font-size:16px; font-weight:600; margin-bottom:8px;"></h3>
+    <p id="promptModalMessage" style="font-size:14px; color:var(--text-muted); margin-bottom:16px; white-space:pre-wrap;"></p>
+    <input type="text" id="promptModalInput" class="input-field" style="margin-bottom:24px; box-sizing:border-box;" onkeydown="if(event.key==='Enter') confirmPromptModalAction();">
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+     <button class="btn btn-ghost" onclick="closePromptModal()">Cancel</button>
+     <button class="btn btn-primary" id="promptModalConfirmBtn" onclick="confirmPromptModalAction()">OK</button>
+    </div>
+   </div>
+  </div>
+
+  <div class="modal-overlay" id="selectModalOverlay">
+   <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="selectModalTitle" style="font-size:16px; font-weight:600; margin-bottom:8px;"></h3>
+    <p id="selectModalMessage" style="font-size:14px; color:var(--text-muted); margin-bottom:16px; white-space:pre-wrap;"></p>
+    <select id="selectModalInput" class="input-field" style="margin-bottom:24px; box-sizing:border-box; width:100%;">
+       <option value="private">Private (Only you can see)</option>
+       <option value="public">Public (Anyone can see)</option>
+    </select>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+     <button class="btn btn-ghost" onclick="closeSelectModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="confirmSelectModalAction()">Save</button>
+    </div>
+   </div>
+  </div>
+
   <script>
     let workspaces = [];
     let repositories = [];
     let pendingDeletions = [];
     let logEntries = [];
+    let currentConflicts = [];
+    let scheduledUploads = [];
     let githubUser = "Not Logged In";
 
+    // --- Conflict Resolution Logic ---
+    function showResolveModal() {
+        const list = document.getElementById('conflictList');
+        list.innerHTML = '';
+        currentConflicts.forEach(c => {
+            list.innerHTML += `
+                <div style="border:1px solid rgba(48,54,61,0.5); padding:12px; border-radius:6px; background:var(--bg);">
+                    <h4 style="margin:0 0 8px 0; font-size:13px;"><i data-lucide="git-branch" style="width:14px;height:14px;display:inline;vertical-align:middle;color:var(--danger);margin-right:6px;"></i>${c.repo_name}</h4>
+                    <p style="margin:0 0 12px 0; font-size:11px; color:var(--text-muted);">${c.error_message}</p>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-accent btn-sm" onclick="resolveConflict('${c.repo_name}', 'pull')"><i data-lucide="download" style="width:14px;height:14px;"></i> Pull (Overwrite Local)</button>
+                        <button class="btn btn-danger btn-sm" onclick="resolveConflict('${c.repo_name}', 'force_push')"><i data-lucide="upload" style="width:14px;height:14px;"></i> Force Push (Overwrite GitHub)</button>
+                    </div>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+        document.getElementById('resolveModalOverlay').classList.add('active');
+    }
+
+    function closeResolveModal() {
+        document.getElementById('resolveModalOverlay').classList.remove('active');
+    }
+
+    async function resolveConflict(repoName, action) {
+        let msg = action === 'pull' ? 'OVERWRITE your local files' : 'OVERWRITE the GitHub repository';
+        if(!confirm('Are you sure you want to ' + msg + '? This cannot be undone.')) return;
+        showProgress();
+        try {
+            const res = await fetch('/api/resolve-conflict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({repo_name: repoName, action: action})
+            });
+            if(res.ok) {
+                showToast('Conflict resolved successfully!', 'success');
+                closeResolveModal();
+                loadData();
+            } else {
+                const err = await res.json();
+                showToast('Failed to resolve: ' + err.detail, 'danger');
+            }
+        } catch(e) {
+            showToast('Network error resolving conflict', 'danger');
+        }
+        hideProgress();
+    }
     
     // --- Onboarding Logic ---
     async function checkOnboarding() {
@@ -643,13 +838,68 @@
         setInterval(loadData, 5000);
         window.addEventListener('resize', handleResize);
         handleResize();
+
+        // Weekly update check (every 7 days via localStorage timestamp)
+        const lastCheck = localStorage.getItem('gitsync-last-update-check');
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
+        if (!lastCheck || (Date.now() - parseInt(lastCheck)) > weekMs) {
+            setTimeout(() => checkForUpdate(false), 5000);
+        }
+
+        function updateUploadFilesList() {
+            const filesEl = document.getElementById('scheduleFiles');
+            const foldersEl = document.getElementById('scheduleFolders');
+            const listEl = document.getElementById('uploadFilesList');
+            if (!listEl) return;
+            let names = [];
+            if (filesEl && filesEl.files.length > 0) {
+                for (let f of filesEl.files) names.push('📄 ' + f.name);
+            }
+            if (foldersEl && foldersEl.files.length > 0) {
+                for (let f of foldersEl.files) names.push('📁 ' + f.name);
+            }
+            listEl.innerHTML = names.length > 0 
+                ? '<span style="color:var(--accent);">' + names.length + ' file(s) selected:</span><br>' + names.slice(0, 15).join(', ') + (names.length > 15 ? '... +' + (names.length - 15) + ' more' : '')
+                : '';
+        }
+        document.addEventListener('change', e => {
+            if (e.target.id === 'scheduleFiles' || e.target.id === 'scheduleFolders') updateUploadFilesList();
+        });
     });
 
     async function loadData() {
-        workspaces = await fetch('/api/workspaces').then(r => r.json());
-        repositories = await fetch('/api/repositories').then(r => r.json());
-        pendingDeletions = await fetch('/api/pending-deletions').then(r => r.json());
-        logEntries = await fetch('/api/logs').then(r => r.json());
+        const [workspacesRes, reposRes, delsRes, logsRes, confsRes, schedRes] = await Promise.all([
+            fetch('/api/workspaces').then(r => r.json()),
+            fetch('/api/repositories').then(r => r.json()),
+            fetch('/api/pending-deletions').then(r => r.json()),
+            fetch('/api/logs').then(r => r.json()),
+            fetch('/api/conflicts').then(r => r.json()),
+            fetch('/api/scheduled-uploads').then(r => r.json())
+        ]);
+        
+        workspaces = workspacesRes;
+        repositories = reposRes;
+        pendingDeletions = delsRes;
+        logEntries = logsRes;
+        currentConflicts = confsRes;
+        scheduledUploads = schedRes;
+        
+        try {
+            const stats = await fetch('/api/stats').then(r => r.json());
+            document.getElementById('statStorage').textContent = stats.formatted_size;
+        } catch(e) {
+            document.getElementById('statStorage').textContent = 'Error';
+        }
+        
+        const banner = document.getElementById('conflictBanner');
+        if (banner) {
+            if (currentConflicts.length > 0) {
+                banner.style.display = 'flex';
+                document.getElementById('conflictBannerText').textContent = `${currentConflicts.length} repositor${currentConflicts.length > 1 ? 'ies' : 'y'} have conflicting remote changes.`;
+            } else {
+                banner.style.display = 'none';
+            }
+        }
         
         if (typeof window.lastLogId === 'undefined') window.lastLogId = logEntries.length > 0 ? logEntries[0].id : 0;
         let newLogId = window.lastLogId;
@@ -668,8 +918,8 @@
         document.getElementById('statDels').textContent = pendingDeletions.length;
         document.getElementById('badgePendingDeletions').textContent = pendingDeletions.length;
         document.getElementById('statLogs').textContent = logEntries.length;
-        
         renderWorkspaces();
+        renderScheduledUploads();
         renderRepositories();
         renderDeletions();
         renderLogs('dashLogViewer', true);
@@ -680,12 +930,22 @@
     }
 
     async function loadProfile() {
+        try {
+            const verRes = await fetch('/api/app-version').then(r => r.json());
+            if (verRes && verRes.version) {
+                 document.getElementById('sidebarStatus').textContent = 'v' + verRes.version;
+            }
+        } catch(e) { console.error('Failed to load app version', e); }
+
         const settings = await fetch('/api/settings').then(r => r.json());
         if (settings.github_token) document.getElementById('ghToken').value = settings.github_token;
         if (settings.openai_key) document.getElementById('openaiKey').value = settings.openai_key;
         if (settings.gemini_key) document.getElementById('geminiKey').value = settings.gemini_key;
         if (settings.sync_interval) document.getElementById('syncInterval').value = settings.sync_interval;
         if (settings.readme_template) document.getElementById('readmeTemplate').value = settings.readme_template;
+        document.getElementById('autoUpdateToggle').checked = settings.auto_update !== false;
+        document.getElementById('customPort').value = settings.custom_port || 0;
+        document.getElementById('currentNetworkAddress').innerText = 'Active Address: ' + window.location.host;
 
         if (settings.github_profile) {
             githubUser = settings.github_profile.login || 'User';
@@ -704,7 +964,9 @@
             openai_key: document.getElementById('openaiKey').value,
             gemini_key: document.getElementById('geminiKey').value,
             sync_interval: parseInt(document.getElementById('syncInterval').value) || 3,
-            readme_template: document.getElementById('readmeTemplate').value
+            readme_template: document.getElementById('readmeTemplate').value,
+            auto_update: document.getElementById('autoUpdateToggle').checked,
+            custom_port: parseInt(document.getElementById('customPort').value) || 0
         };
 
         const res = await fetch('/api/settings', {
@@ -748,6 +1010,189 @@
         </tr>
       `}).join('');
       lucide.createIcons();
+    }
+
+    function renderScheduledUploads() {
+        const wsSelect = document.getElementById('scheduleWsSelect');
+        const currentWsSelection = wsSelect.value;
+        wsSelect.innerHTML = '<option value="" disabled selected>Select Workspace...</option>' + 
+            workspaces.map(w => `<option value="${w.path}">${w.path}</option>`).join('');
+        if (workspaces.some(w => w.path === currentWsSelection)) {
+            wsSelect.value = currentWsSelection;
+        }
+
+        const tbody = document.getElementById('scheduledUploadsBody');
+        if (!scheduledUploads || scheduledUploads.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--text-muted)">No pending uploads scheduled.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = scheduledUploads.map(su => `
+            <tr>
+              <td style="font-weight:500;">${su.file_name}</td>
+              <td style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">${su.target_workspace}${su.relative_target_path ? '/' + su.relative_target_path : ''}</td>
+              <td style="color:var(--warning); font-size:12px;">${new Date(su.scheduled_at).toLocaleString()}</td>
+              <td>
+                <button class="btn btn-danger btn-sm" onclick="cancelScheduledUpload(${su.id})"><i data-lucide="x" style="width:12px;height:12px;"></i> Cancel</button>
+              </td>
+            </tr>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    async function handleScheduleUpload(e) {
+        e.preventDefault();
+        const ws = document.getElementById('scheduleWsSelect').value;
+        const rel = document.getElementById('scheduleRelPath').value;
+        const time = document.getElementById('scheduleTime').value;
+        const filesInput = document.getElementById('scheduleFiles');
+        const foldersInput = document.getElementById('scheduleFolders');
+
+        const totalFiles = (filesInput.files.length) + (foldersInput.files.length);
+        if (!ws || !time || totalFiles === 0) {
+            showToast('Please select at least one file or folder to upload', 'warning');
+            return;
+        }
+        
+        let formData = new FormData();
+        formData.append('target_workspace', ws);
+        formData.append('relative_target_path', rel);
+        formData.append('scheduled_at', time);
+        
+        for (let i = 0; i < filesInput.files.length; i++) {
+            formData.append('files', filesInput.files[i]);
+        }
+        for (let i = 0; i < foldersInput.files.length; i++) {
+            formData.append('files', foldersInput.files[i]);
+        }
+        
+        showProgress();
+        try {
+            const res = await fetch('/api/upload-scheduled', {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                showToast('Files scheduled for upload successfully!', 'success');
+                e.target.reset();
+                loadData();
+            } else {
+                const err = await res.json();
+                showToast('Failed to schedule: ' + err.detail, 'danger');
+            }
+        } catch(err) {
+            showToast('Network error scheduling upload', 'danger');
+        }
+        hideProgress();
+    }
+
+    async function cancelScheduledUpload(id) {
+        if (!confirm("Are you sure you want to cancel this scheduled upload?")) return;
+        showProgress();
+        try {
+            const res = await fetch('/api/cancel-scheduled', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            });
+            if (res.ok) {
+                showToast("Scheduled upload cancelled.", "warning");
+                loadData();
+            } else {
+                showToast("Failed to cancel upload.", "danger");
+            }
+        } catch(err) {
+            showToast('Network error cancelling upload', 'danger');
+        }
+        hideProgress();
+    }
+
+    async function openDropzone() {
+        showToast('Opening Drag & Drop overlay...', 'info');
+        try {
+            await fetch('/api/open-dropzone', { method: 'POST' });
+        } catch(e) {
+            showToast('Failed to open Drop Zone window', 'danger');
+        }
+    }
+
+    let pendingUpdateUrl = '';
+    let pendingUpdateVersion = '';
+
+    async function checkForUpdate(manual) {
+        try {
+            const res = await fetch('/api/check-update').then(r => r.json());
+            localStorage.setItem('gitsync-last-update-check', Date.now().toString());
+            
+            const dot = document.getElementById('updateDot');
+            const btn = document.getElementById('updateBtn');
+            
+            if (res.has_update && res.download_url) {
+                pendingUpdateUrl = res.download_url;
+                pendingUpdateVersion = res.latest_version;
+                dot.style.display = 'block';
+                btn.title = `Update available: v${res.latest_version}`;
+                btn.style.color = 'var(--accent)';
+                
+                if (manual) {
+                    showUpdatePrompt(res);
+                } else {
+                    // Auto-update if enabled
+                    const autoUpdate = document.getElementById('autoUpdateToggle')?.checked;
+                    if (autoUpdate) {
+                        showToast('⬇ Auto-downloading update v' + res.latest_version + '...', 'info');
+                        doUpdate();
+                    } else {
+                        showToast('🆕 Update v' + res.latest_version + ' available!', 'info');
+                    }
+                }
+            } else {
+                dot.style.display = 'none';
+                btn.title = 'Up to date (v' + res.current_version + ')';
+                btn.style.color = '';
+                if (manual) showToast('✅ You are on the latest version (v' + res.current_version + ')', 'success');
+            }
+        } catch(e) {
+            if (manual) showToast('Failed to check for updates', 'danger');
+        }
+    }
+
+    function showUpdatePrompt(res) {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = 'toast show';
+        el.style.cssText = 'padding:16px; max-width:360px; border-left:4px solid var(--accent);';
+        el.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <i data-lucide="package" style="width:20px;height:20px;color:var(--accent);"></i>
+                <strong style="font-size:13px;">Update Available</strong>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin:0 0 4px 0;">v${res.current_version} → v${res.latest_version}</p>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button class="btn btn-accent btn-sm" onclick="doUpdate(); this.closest('.toast').remove();" style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i> Update Now
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="this.closest('.toast').remove();" style="padding:6px 12px;">
+                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(el);
+        lucide.createIcons();
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 30000);
+    }
+
+    async function doUpdate() {
+        if (!pendingUpdateUrl) { showToast('No update URL available', 'warning'); return; }
+        showToast('⬇ Downloading v' + pendingUpdateVersion + '... GitSync will restart.', 'info');
+        try {
+            await fetch('/api/do-update', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ download_url: pendingUpdateUrl })
+            });
+        } catch(e) {
+            showToast('Update failed: ' + e.message, 'danger');
+        }
     }
 
     async function addWorkspace() {
@@ -825,8 +1270,8 @@
           <td style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="forceSync(decodeURIComponent('${safePath}'))"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Sync</button>
             <button class="btn btn-accent btn-sm" onclick="generateReadme(decodeURIComponent('${safePath}'))"><i data-lucide="file-text" style="width:12px;height:12px;"></i> Gen README</button>
-            <button class="btn btn-ghost btn-sm" onclick="renameRepo('${r.repo_name}')" title="Rename"><i data-lucide="edit-2" style="width:12px;height:12px;"></i></button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleVisibility('${r.repo_name}')" title="Change Visibility"><i data-lucide="shield" style="width:12px;height:12px;"></i></button>
+            <button class="btn btn-sm" style="background:rgba(58,134,255,0.15); color:var(--primary); border:1px solid rgba(58,134,255,0.3);" onclick="renameRepo('${r.repo_name}')" title="Rename Repo"><i data-lucide="edit-3" style="width:12px;height:12px;"></i> Rename</button>
+            <button class="btn btn-sm" style="background:rgba(210,153,34,0.15); color:var(--warning); border:1px solid rgba(210,153,34,0.3);" onclick="toggleVisibility('${r.repo_name}')" title="Change Visibility"><i data-lucide="eye" style="width:12px;height:12px;"></i> Visibility</button>
           </td>
         </tr>`
       }).join('');
@@ -919,6 +1364,32 @@
       });
     }
 
+    function renameRepo(oldName, id) {
+      openPromptModal(
+        'Rename Repository',
+        `Enter new name for repository "${oldName}":\nThis will rename both the local folder and the GitHub repository.`,
+        oldName,
+        (newName) => {
+          if (!newName || newName.trim() === '' || newName === oldName) return;
+          showToast(`Renaming "${oldName}" to "${newName}"...`, 'info');
+          fetch('/api/rename-repo', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ old_name: oldName, new_name: newName.trim() })
+          })
+          .then(res => res.json())
+          .then(data => {
+              if (data.error) throw new Error(data.error);
+              showToast(`Successfully renamed to ${newName}`, 'success');
+              loadData();
+          })
+          .catch(err => {
+              showToast(`Rename failed: ${err.message || 'Unknown error'}`, 'error');
+          });
+        }
+      );
+    }
+
     async function cancelDeletion(name) {
         await fetch('/api/cancel-deletion', {
             method: 'POST',
@@ -1007,6 +1478,60 @@
     }
     function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); modalCallback = null; }
     function confirmModalAction() { if (modalCallback) modalCallback(); closeModal(); }
+
+    let promptModalCallback = null;
+    function openPromptModal(title, message, defaultValue, callback) {
+      document.getElementById('promptModalTitle').textContent = title;
+      document.getElementById('promptModalMessage').textContent = message;
+      const input = document.getElementById('promptModalInput');
+      input.value = defaultValue;
+      promptModalCallback = callback;
+      document.getElementById('promptModalOverlay').classList.add('active');
+      setTimeout(() => { input.focus(); input.select(); }, 50);
+    }
+    function closePromptModal() { document.getElementById('promptModalOverlay').classList.remove('active'); promptModalCallback = null; }
+    function confirmPromptModalAction() { 
+        if (promptModalCallback) {
+            promptModalCallback(document.getElementById('promptModalInput').value); 
+        }
+        closePromptModal(); 
+    }
+
+    let selectModalCallback = null;
+    function openSelectModal(title, message, callback) {
+      document.getElementById('selectModalTitle').textContent = title;
+      document.getElementById('selectModalMessage').textContent = message;
+      selectModalCallback = callback;
+      document.getElementById('selectModalInput').value = 'private'; // default
+      document.getElementById('selectModalOverlay').classList.add('active');
+    }
+    function closeSelectModal() { document.getElementById('selectModalOverlay').classList.remove('active'); selectModalCallback = null; }
+    function confirmSelectModalAction() { 
+        if (selectModalCallback) {
+            selectModalCallback(document.getElementById('selectModalInput').value); 
+        }
+        closeSelectModal(); 
+    }
+
+    function toggleVisibility(repoName) {
+      openSelectModal('Repository Visibility', `Select the new privacy state for GitHub repository "${repoName}":`, (val) => {
+          showToast(`Updating ${repoName} to ${val}...`, 'info');
+          fetch('/api/toggle-visibility', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ repo_name: repoName, private: val === 'private' })
+          })
+          .then(res => res.json())
+          .then(data => {
+              if (data.error) throw new Error(data.error);
+              showToast(`Visibility updated successfully for ${repoName}`, 'success');
+              loadData();
+          })
+          .catch(err => {
+              showToast(`Visibility change failed: ${err.message || 'Unknown error'}`, 'error');
+          });
+      });
+    }
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('open');
