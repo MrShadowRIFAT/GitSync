@@ -1,74 +1,107 @@
 <p align="center">
-  <img src="ui/assets/logo.png" alt="GitSync Logo" width="128">
+  <img src="build/appicon.png" alt="GitSync Logo" width="110" onerror="this.style.display='none'">
 </p>
 
 <h1 align="center">GitSync</h1>
 
 <p align="center">
-  <strong>Effortlessly sync your local workspace folders directly with GitHub.</strong>
+  <strong>Effortless, intelligent background Git synchronization for Windows with multi-account management and AI superpowers.</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Windows-blue" alt="Platform">
-  <img src="https://img.shields.io/github/v/release/MrShadowRIFAT/GitSync" alt="Release">
-  <img src="https://img.shields.io/badge/Python-3.14-green" alt="Python">
+  <img src="https://img.shields.io/badge/Version-v2.2.4-blue.svg?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Platform-Windows%20(x64)-0078D6.svg?style=flat-square&logo=windows" alt="Platform">
+  <img src="https://img.shields.io/badge/Built%20With-Go%20%7C%20Wails%20v2%20%7C%20React-00ADD8.svg?style=flat-square&logo=go" alt="Stack">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License">
 </p>
+
+---
+
+## 📖 Overview
+
+**GitSync** is a lightweight, high-performance Windows desktop application designed to eliminate the friction of Git workflows. It monitors your local project directories, debounces file changes, and automatically synchronizes commits and pushes to GitHub in the background.
+
+Equipped with **multi-account GitHub management**, **remote repository discovery**, and **integrated AI providers** (GitHub Models, Google Gemini, OpenAI, Anthropic Claude, and Grok), GitSync handles everything from smart commit summaries to comprehensive `README.md` generation.
+
+---
 
 ## ✨ Features
 
-- **🚀 Automated Background Synchronization:** Watch your directories and auto-sync to GitHub effortlessly.
-- **🖼️ Beautiful Web UI Dashboard:** Manage your repositories, workspaces, and watch configurations through a clean, modern interface.
-- **🤖 AI-Generated Commits & READMEs:** Automatically generate meaningful commit messages and default `README.md` files utilizing OpenAI or Google Gemini.
-- **📁 Native File Picker Integration:** Smoothly select folders from your OS with deeply integrated Windows UI dialogs.
-- **🔒 Single-Instance Execution:** Safely guarantees only one instance of GitSync runs at any given time.
+- 🚀 **Automated Background Synchronization:** Real-time debounced file-system watcher automatically commits and pushes changes without disrupting your flow.
+- 👥 **Multi-Account GitHub Management:** Connect, switch between, and manage multiple GitHub personal or organization accounts with secure Windows DPAPI credential encryption.
+- 🤖 **AI Commit Messages & README Generator:** Generate contextual commit messages and structured `README.md` files powered by GitHub Models (free/default), Google Gemini, OpenAI, Claude, Grok, or custom OpenAI-compatible APIs.
+- 🌐 **Remote Discovery & One-Click Clone:** Browse your remote GitHub repositories right from the app and pull/clone them into local directories with a single click.
+- 🔄 **Manual Pull & Push Controls:** Instant one-click **Pull** and **Push** controls for quick manual overrides, automatically transitioning into live **Syncing** status during background operations.
+- ⚙️ **Per-Repo Customization:** Customize target branches (e.g. `main`, `master`, `dev`) and commit templates using dynamic tokens (`{{smart}}`, `{{files}}`, `{{branch}}`, `{{timestamp}}`).
+- 💻 **One-Click IDE & Terminal Access:** Open any tracked repository directly in Windows File Explorer, Visual Studio Code, or Windows Terminal.
+- 🪟 **Native Windows Desktop Experience:** Sits unobtrusively in your system tray, supports minimizing to tray, and includes optional automatic startup with Windows.
+- 🛡️ **Conflict Protection & Pre-Sync Backups:** Safeguards local work with pre-sync backups, safety prompts before deletion, and non-destructive repository unlinking.
+- 🔒 **Single-Instance Execution:** Uses Windows kernel mutex locks to ensure only one instance of GitSync runs at any time.
 
 ---
 
 ## 📥 Download & Installation
 
-The easiest way to use GitSync is by downloading the pre-packaged executable. You do not need Python installed to run the `.exe`.
+The easiest way to use GitSync is by downloading the standalone executable. No runtime dependencies (such as Python, Node.js, or Go) are required to run the app.
 
 1. Go to the [Releases Page](https://github.com/MrShadowRIFAT/GitSync/releases).
 2. Download the latest `GitSync.exe`.
-3. Double-click the downloaded executable to start the background agent. The dashboard will automatically open in your default browser.
+3. Launch `GitSync.exe`. The app runs directly as a native Windows desktop client with system tray integration.
 
 ---
 
 ## 🛠️ Requirements
 
-If you are running the `GitSync.exe` directly, you only need:
-- **[Git](https://git-scm.com/downloads)** installed on your system.
-- A **GitHub Personal Access Token (PAT)** (configured within the GitSync dashboard settings) for API access.
-- *(Optional)* An OpenAI or Google Gemini API Key for AI generation features.
+- **OS:** Windows 10 / 11 (64-bit)
+- **Git:** [Git for Windows](https://git-scm.com/downloads) installed and available in your system `PATH`.
+- **GitHub Account:** Connect via GitHub OAuth / Device Flow or a Personal Access Token (PAT).
+- *(Optional)* An API key for Google Gemini, OpenAI, Anthropic Claude, or Grok if using external AI models beyond the default GitHub Models.
 
-### For Developers
+---
 
-If you want to run the project from the source code, please ensure you have the following installed:
-- Python 3.8+
-- Requirements located in `requirements.txt`
+## 🧑‍💻 For Developers & Building from Source
 
-```bash
-git clone https://github.com/MrShadowRIFAT/GitSync.git
-cd GitSync
-pip install -r requirements.txt
-python main.py
-```
+If you want to build GitSync from source code:
 
-## 🏗️ Building the Executable
+### Prerequisites
+- **Go:** 1.21 or higher ([Download](https://go.dev/dl/))
+- **Node.js:** 18 or higher ([Download](https://nodejs.org/))
+- **Wails v2 CLI:**
+  ```powershell
+  go install github.com/wailsapp/wails/v2/cmd/wails@latest
+  ```
 
-To bundle the application yourself, you can use the provided build script:
+### Build Instructions
 
-```bash
-.\build.bat
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/MrShadowRIFAT/GitSync.git
+   cd GitSync
+   ```
 
-This leverages PyInstaller to package the FastApi backend, HTML dashboard, and Python dependencies into a single, portable executable found inside the `dist/` directory.
+2. **Run in development mode (with live reload):**
+   ```bash
+   wails dev
+   ```
+
+3. **Build the production executable:**
+   ```bash
+   wails build -clean
+   ```
+   The compiled standalone binary will be generated at `build/bin/GitSync.exe`.
+
+---
 
 ## 🤝 Support & Feedback
 
-If you enjoy using GitSync, please consider giving this repository a ⭐ **Star**! It helps others discover the project.
+If you find GitSync helpful, please consider giving this repository a ⭐ **Star**!
 
-Encountered a bug or have a feature request? Please [open an issue](https://github.com/MrShadowRIFAT/GitSync/issues) on GitHub.
+- 🐛 **Found a bug?** Please [open an issue](https://github.com/MrShadowRIFAT/GitSync/issues).
+- 💡 **Feature request?** Submit an issue or start a discussion on GitHub.
+
+---
 
 ## 📄 License
-MIT License
+
+Distributed under the **MIT License**. See `LICENSE` for more information.
+
