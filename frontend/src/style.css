@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── GitHub Dark Theme Canvas ─────────────────────────────── */
+:root {
+  color-scheme: dark;
+  --bg-primary: #0d1116;
+  --bg-surface: #161b22;
+  --bg-card: #161b22;
+  --bg-elevated: #21262d;
+  --border: #30363d;
+  --border-subtle: #21262d;
+  --accent: #2f81f7;
+  --accent-hover: #58a6ff;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #0d1116;
+  color: #e6edf3;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+/* ─── Wails drag regions & frameless window responsiveness ────── */
+[data-wails-drag],
+.wails-drag {
+  --wails-draggable: drag;
+  -webkit-app-region: drag;
+  user-select: none;
+  cursor: default;
+}
+
+[data-wails-no-drag],
+.wails-no-drag,
+button,
+input,
+select,
+textarea,
+a {
+  --wails-draggable: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* ─── GitHub-styled Components ───────────────────────────────── */
+@layer components {
+  .btn-primary {
+    @apply px-3 py-1.5 rounded-md bg-[#238636] text-white font-medium text-xs
+           hover:bg-[#2ea043] border border-[rgba(240,246,252,0.1)]
+           shadow-sm transition-colors duration-150 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .btn-accent {
+    @apply px-3 py-1.5 rounded-md bg-[#1f6feb] text-white font-medium text-xs
+           hover:bg-[#388bfd] border border-[rgba(240,246,252,0.1)]
+           shadow-sm transition-colors duration-150 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-3 py-1.5 rounded-md bg-[#21262d] text-[#c9d1d9] font-medium text-xs
+           hover:bg-[#30363d] hover:text-[#f0f6fc] border border-[#30363d]
+           transition-colors duration-150 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply px-2.5 py-1 rounded-md text-text-muted text-xs font-medium
+           hover:bg-white/5 hover:text-text-primary transition-colors duration-150;
+  }
+
+  .card {
+    @apply rounded-lg border border-border bg-bg-surface transition-all duration-150;
+  }
+
+  .card-hover {
+    @apply card hover:border-[#8b949e]/40 hover:shadow-sm;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border;
+  }
+
+  .badge-idle {
+    @apply badge bg-[#238636]/15 text-[#3fb950] border-[#238636]/30;
+  }
+
+  .badge-debouncing {
+    @apply badge bg-[#d29922]/15 text-[#d29922] border-[#d29922]/30;
+  }
+
+  .badge-syncing {
+    @apply badge bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/30;
+  }
+
+  .badge-offline {
+    @apply badge bg-[#30363d]/40 text-[#8b949e] border-[#30363d];
+  }
+
+  .badge-error {
+    @apply badge bg-[#da3633]/15 text-[#f85149] border-[#da3633]/30;
+  }
+
+  .badge-conflict {
+    @apply badge bg-[#d29922]/15 text-[#d29922] border-[#d29922]/30;
+  }
+
+  .badge-paused {
+    @apply badge bg-[#d29922]/15 text-[#d29922] border-[#d29922]/30;
+  }
+
+  .input {
+    @apply w-full px-2.5 py-1.5 rounded-md text-xs text-text-primary
+           bg-[#0d1116] border border-border
+           focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent
+           placeholder:text-text-disabled transition-all duration-150;
+  }
+}
+
+

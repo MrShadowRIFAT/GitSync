@@ -1,0 +1,22 @@
+{
+  "name": "GitSync",
+  "outputfilename": "GitSync",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "http://localhost:5173",
+  "author": {
+    "name": "GitSync Team"
+  },
+  "info": {
+    "companyName": "GitSync",
+    "productName": "GitSync",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright 2026",
+    "comments": "Automated background Git synchronization with multi-account GitHub support"
+  },
+  "appicon": "build/appicon.png",
+  "icon": "build/icon.ico",
+  "wailsjsdir": "./frontend/src",
+  "version": "2"
+}
